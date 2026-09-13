@@ -287,6 +287,10 @@ internal object WeTypeClipboardSearchFilter {
                     applyingFilter.set(true)
                     invokeSetList(scrollView, filtered)
                     invokeAdapterRefresh(scrollView)
+                    // S8：宿主 y() 只重算折叠分区并 notifyItemChanged(0)，可视区其余行
+                    // 保持旧绑定（滑出屏幕回收后才重绑，表现为第 2/3 行短暂显示旧内容）。
+                    // 这里补一次全量 notifyDataSetChanged 强制重绑所有行。
+                    invokeAdapterFullRebind(scrollView)
                 } catch (t: Throwable) {
                     AndroidLog.e(TAG, "apply filtered list failed: ${t.message}")
                 } finally {
@@ -324,17 +328,7 @@ internal object WeTypeClipboardSearchFilter {
 
     private fun invokeAdapterRefresh(scrollView: Any) {
         try {
-            val getter = scrollView.javaClass.declaredMethods.firstOrNull { m ->
-                m.name == "getListAdapter" && m.parameterTypes.isEmpty()
-            } ?: run {
-                AndroidLog.e(TAG, "getListAdapter() not found")
-                return
-            }
-            getter.isAccessible = true
-            val adapter = getter.invoke(scrollView) ?: run {
-                AndroidLog.e(TAG, "getListAdapter() returned null")
-                return
-            }
+            val adapter = resolveAdapter(scrollView) ?: return
             val refresh = adapter.javaClass.declaredMethods.firstOrNull { m ->
                 m.name == "y" && m.parameterTypes.isEmpty()
             } ?: run {
@@ -346,6 +340,46 @@ internal object WeTypeClipboardSearchFilter {
         } catch (t: Throwable) {
             AndroidLog.e(TAG, "adapter refresh y() failed: ${t.message}")
         }
+    }
+
+    /** 全量重绑：宿主 `y()` 不覆盖可视区旧行，需显式 `notifyDataSetChanged`。 */
+    private fun invokeAdapterFullRebind(scrollView: Any) {
+        try {
+            val adapter = resolveAdapter(scrollView) ?: return
+            var clazz: Class<*>? = adapter.javaClass
+            while (clazz != null && clazz != Any::class.java) {
+                for (method in clazz.declaredMethods) {
+                    if (method.name == "notifyDataSetChanged" && method.parameterTypes.isEmpty()) {
+                        method.isAccessible = true
+                        method.invoke(adapter)
+                        return
+                    }
+                }
+                clazz = clazz.superclass
+            }
+            AndroidLog.e(TAG, "notifyDataSetChanged not found on ${adapter.javaClass.name}")
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "adapter full rebind failed: ${t.message}")
+        }
+    }
+
+    private fun resolveAdapter(scrollView: Any): Any? = try {
+        val getter = scrollView.javaClass.declaredMethods.firstOrNull { m ->
+            m.name == "getListAdapter" && m.parameterTypes.isEmpty()
+        }
+        if (getter == null) {
+            AndroidLog.e(TAG, "getListAdapter() not found")
+            null
+        } else {
+            getter.isAccessible = true
+            getter.invoke(scrollView) ?: run {
+                AndroidLog.e(TAG, "getListAdapter() returned null")
+                null
+            }
+        }
+    } catch (t: Throwable) {
+        AndroidLog.e(TAG, "resolve adapter failed: ${t.message}")
+        null
     }
 
     // ---- 高亮（onBindViewHolder 后处理，主线程碰 View） ----
