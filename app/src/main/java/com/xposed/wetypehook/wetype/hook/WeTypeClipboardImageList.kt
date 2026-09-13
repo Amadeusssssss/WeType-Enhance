@@ -297,6 +297,7 @@ internal object WeTypeClipboardImageList {
         } ?: return
         val collected = ArrayList<Any>()
         val ids = HashSet<Long>()
+        val context = currentApplicationContext()
         for (method in listOf(daoImages, daoUnshown)) {
             val m = method ?: continue
             val list = runCatching { m.invoke(dao) as? List<*> }.getOrNull() ?: continue
@@ -304,7 +305,12 @@ internal object WeTypeClipboardImageList {
                 if (item == null) continue
                 if (WeTypeClipboardImageHost.itemType(item) != 1L) continue
                 val id = WeTypeClipboardImageHost.itemId(item) ?: continue
-                if (ids.add(id)) collected.add(item)
+                if (!ids.add(id)) continue
+                if (context != null && !ensureLocalFileAvailable(item, id, dao, context)) {
+                    ids.remove(id)
+                    continue
+                }
+                collected.add(item)
             }
         }
         collected.sortByDescending { WeTypeClipboardImageHost.itemCreateTime(it) }
@@ -334,6 +340,43 @@ internal object WeTypeClipboardImageList {
             runCatching { extendExpiryForImages(collected) }
                 .onFailure { AndroidLog.e(TAG, "extend image expiry failed: ${it.message}") }
         }
+    }
+
+    /**
+     * ADR-0007：本地文件可用性保障（非主线程）。
+     * - `pathType != 0`：远程载荷未下载，保留等下载；
+     * - 宿主文件存在：保留，并补一份模块私有副本（迁移旧图，防下一次清缓存）；
+     * - 宿主文件丢失但私有副本在：回写副本路径自愈；
+     * - 两者都无：死记录（无文件/无副本/无远程链接），按用户选择删除记录与副本。
+     *
+     * @return true = 条目保留（仍可渲染）
+     */
+    private fun ensureLocalFileAvailable(item: Any, id: Long, dao: Any, context: Context): Boolean {
+        if (WeTypeClipboardImageHost.itemPathType(item) != 0) return true
+        val path = WeTypeClipboardImageHost.itemPath(item)
+        val hostFile = if (path.isNullOrEmpty()) null else File(path)
+        if (hostFile != null && hostFile.isFile) {
+            if (WeTypeClipboardImageStore.find(context, id) == null) {
+                WeTypeClipboardImageStore.importFromFile(context, id, hostFile)
+            }
+            return true
+        }
+        val stored = WeTypeClipboardImageStore.find(context, id)
+        if (stored != null) {
+            val healPath = stored.absolutePath
+            WeTypeClipboardImageHost.setItemPath(item, healPath)
+            WeTypeClipboardImageHost.setItemPathType(item, 0)
+            runCatching { persistImagePath(id, healPath) }
+                .onFailure { AndroidLog.e(TAG, "heal image path failed id=$id: ${it.message}") }
+            AndroidLog.i(TAG, "image path healed from module store id=$id path=$healPath")
+            return true
+        }
+        val delete = daoDeleteMethod(dao) ?: return true
+        runCatching { delete.invoke(dao, item) }
+            .onFailure { AndroidLog.e(TAG, "prune dead image failed id=$id: ${it.message}") }
+        WeTypeClipboardImageStore.delete(context, id)
+        AndroidLog.i(TAG, "pruned dead image id=$id (host file missing, no payload, no store copy)")
+        return false
     }
 
     /**
@@ -549,12 +592,13 @@ internal object WeTypeClipboardImageList {
 
     fun isInjecting(): Boolean = injecting
 
-    /** 单条删除（宿主 B.y 或列表删除回调）后同步摘除缓存。 */
+    /** 单条删除（宿主 B.y 或列表删除回调）后同步摘除缓存与模块私有副本。 */
     fun forgetById(id: Long) {
         synchronized(cacheLock) {
-            if (!cachedIds.remove(id)) return
+            cachedIds.remove(id)
             cachedImages.removeAll { WeTypeClipboardImageHost.itemId(it) == id }
         }
+        currentApplicationContext()?.let { WeTypeClipboardImageStore.delete(it, id) }
     }
 
     fun clearCache() {

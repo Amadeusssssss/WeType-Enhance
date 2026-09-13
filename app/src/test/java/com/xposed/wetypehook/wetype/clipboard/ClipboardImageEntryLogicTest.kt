@@ -117,4 +117,29 @@ class ClipboardImageEntryLogicTest {
     fun remotePendingTextMatchesSpec() {
         assertEquals("来自关联设备的图片", ClipboardImageEntryLogic.REMOTE_PENDING_TEXT)
     }
+
+    @Test
+    fun storeFileNameKeepsSafeExtension() {
+        assertEquals("42.jpg", imageStoreFileName(42L, "jpg"))
+        assertEquals("42.png", imageStoreFileName(42L, "PNG"))
+        assertEquals("42.webp", imageStoreFileName(42L, " webp "))
+    }
+
+    @Test
+    fun storeFileNameFallsBackToJpg() {
+        assertEquals("7.jpg", imageStoreFileName(7L, null))
+        assertEquals("7.jpg", imageStoreFileName(7L, ""))
+        assertEquals("7.jpg", imageStoreFileName(7L, "jpeg2000"))
+        assertEquals("7.jpg", imageStoreFileName(7L, "../x"))
+        assertEquals("7.jpg", imageStoreFileName(7L, "a b"))
+    }
+
+    @Test
+    fun storeFileItemIdParsesRoundTrip() {
+        assertEquals(123L, imageStoreItemId("123.jpg"))
+        assertEquals(123L, imageStoreItemId("123.webp"))
+        assertNull(imageStoreItemId("123"))
+        assertNull(imageStoreItemId(".jpg"))
+        assertNull(imageStoreItemId("abc.jpg"))
+    }
 }

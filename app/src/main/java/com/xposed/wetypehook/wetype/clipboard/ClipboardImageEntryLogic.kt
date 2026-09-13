@@ -23,6 +23,21 @@ internal data class ClipboardRemoteImagePayload(
     val encrypted: Boolean
 )
 
+/** 模块私有副本文件名：`<id>.<ext>`；扩展名非法/缺失时退化为 jpg。 */
+internal fun imageStoreFileName(id: Long, sourceExtension: String?): String {
+    val ext = sourceExtension?.trim()?.lowercase()?.takeIf { e ->
+        e.isNotEmpty() && e.length <= 5 && e.all { it.isLetterOrDigit() }
+    } ?: "jpg"
+    return "$id.$ext"
+}
+
+/** 从副本文件名解析条目 id（`<id>.<ext>`）；不合法返回 null。 */
+internal fun imageStoreItemId(name: String): Long? {
+    val dot = name.indexOf('.')
+    if (dot <= 0) return null
+    return name.substring(0, dot).toLongOrNull()
+}
+
 internal object ClipboardImageEntryLogic {
 
     const val REMOTE_PENDING_TEXT = "来自关联设备的图片"

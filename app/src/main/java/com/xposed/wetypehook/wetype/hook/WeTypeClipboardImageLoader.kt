@@ -260,7 +260,7 @@ internal object WeTypeClipboardImageLoader {
         val listener = createListener(
             onReady = { file ->
                 executor.execute {
-                    val finalPath = runCatching { process(item, id, payload, file, output) }.getOrNull()
+                    val finalPath = runCatching { process(item, id, payload, file, output, context) }.getOrNull()
                     activeTargets.remove(id)
                     if (finalPath != null) {
                         inFlight.remove(id)
@@ -356,7 +356,8 @@ internal object WeTypeClipboardImageLoader {
         id: Long,
         payload: ClipboardRemoteImagePayload,
         downloaded: File,
-        output: File
+        output: File,
+        context: Context
     ): String? {
         if (payload.encrypted) {
             val method = decryptMethod ?: return null
@@ -380,8 +381,14 @@ internal object WeTypeClipboardImageLoader {
             }
         }
         val finalPath = maybeTranscode(output.absolutePath)
-        persist(item, id, finalPath)
-        return finalPath
+        // ADR-0007：再存一份到模块私有目录，宿主清缓存后仍可渲染/自愈。
+        val durable = WeTypeClipboardImageStore.importFromFile(context, id, File(finalPath))
+        val storedPath = durable?.absolutePath ?: finalPath
+        if (durable != null) {
+            AndroidLog.i(TAG, "image stored durably id=$id path=$storedPath")
+        }
+        persist(item, id, storedPath)
+        return storedPath
     }
 
     private fun maybeTranscode(path: String): String {
