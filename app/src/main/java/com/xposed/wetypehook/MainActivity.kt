@@ -143,6 +143,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 const val EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS = "com.xposed.wetypehook.extra.OPEN_WETYPE_EMBEDDED_SETTINGS"
+const val EXTRA_OPEN_WETYPE_BACKUP_PAGE = "com.xposed.wetypehook.extra.OPEN_WETYPE_BACKUP_PAGE"
 private const val ACTIVATION_HEARTBEAT_WINDOW_MS = 4_000L
 private const val ACTIVATION_KEYBOARD_RETRY_COUNT = 3
 private const val ACTIVATION_KEYBOARD_RETRY_DELAY_MS = 450L
@@ -430,7 +431,7 @@ internal fun WeTypeSettingsApp(
 }
 
 @Composable
-private fun SyncSystemBars(darkMode: Boolean) {
+internal fun SyncSystemBars(darkMode: Boolean) {
     val view = LocalView.current
     if (view.isInEditMode) return
 
@@ -525,7 +526,6 @@ private fun WeTypeSettingsScreen(
     var clipboardImageMaxSizeMb by rememberSaveable {
         mutableIntStateOf(snapshot.clipboardImageMaxSizeMb)
     }
-    var showClipboardBackupDialog by rememberSaveable { mutableStateOf(false) }
     var qwertyGestureEnabled by rememberSaveable {
         mutableStateOf(snapshot.qwertyGestureEnabled)
     }
@@ -972,7 +972,9 @@ private fun WeTypeSettingsScreen(
                         onClipboardImageMaxCountChange = { clipboardImageMaxCount = it },
                         clipboardImageMaxSizeMb = clipboardImageMaxSizeMb,
                         onClipboardImageMaxSizeMbChange = { clipboardImageMaxSizeMb = it },
-                        onOpenClipboardBackup = { showClipboardBackupDialog = true },
+                        onOpenClipboardBackup = {
+                            WeTypeHostLauncher.launchBackupPage(settingsContext as? Activity)
+                        },
                         disableHotUpdate = disableHotUpdate,
                         onDisableHotUpdateChange = { disableHotUpdate = it },
                         activationStatus = activationStatus,
@@ -980,13 +982,6 @@ private fun WeTypeSettingsScreen(
                     )
                 }
                 }
-            }
-            if (showClipboardBackupDialog) {
-                ClipboardBackupDialog(
-                    settingsContext = preferencesContext,
-                    isEmbeddedHost = isEmbeddedHost,
-                    onDismiss = { showClipboardBackupDialog = false }
-                )
             }
         }
     }

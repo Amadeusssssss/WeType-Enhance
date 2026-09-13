@@ -319,6 +319,7 @@ class MainHook : XposedModule() {
         HookEnvironment.withHookScope("wetype.disable-update") { hookWeTypeDisableHotUpdate() }
         HookEnvironment.withHookScope("wetype.intent-entry") { hookWeTypeIntentEntry() }
         HookEnvironment.withHookScope("wetype.activity-result") { hookHostActivityResult() }
+        HookEnvironment.withHookScope("wetype.activity-result") { hookHostBackPress() }
         HookEnvironment.withHookScope("wetype.about-entry") { hookWeTypeAboutLogoEntry() }
         HookEnvironment.withHookScope("wetype.keyboard-logo") { WeTypeResourceHooks.hookKeyboardLogo() }
         HookEnvironment.withHookScope("wetype.toolbar-icon") { WeTypeResourceHooks.hookToolbarIconBackground() }
@@ -705,6 +706,15 @@ class MainHook : XposedModule() {
             }.hookAfter { param ->
                 val activity = param.thisObject as? Activity ?: return@hookAfter
                 val intent = activity.intent ?: return@hookAfter
+                if (intent.getBooleanExtra(EXTRA_OPEN_WETYPE_BACKUP_PAGE, false)) {
+                    intent.removeExtra(EXTRA_OPEN_WETYPE_BACKUP_PAGE)
+                    activity.window?.decorView?.let { decorView ->
+                        HookEnvironment.postTracked(decorView) {
+                            WeTypeHostLauncher.showBackupPage(activity)
+                        }
+                    }
+                    return@hookAfter
+                }
                 if (!intent.getBooleanExtra(EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS, false)) return@hookAfter
                 intent.removeExtra(EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS)
                 activity.window?.decorView?.let { decorView ->
@@ -741,6 +751,26 @@ class MainHook : XposedModule() {
             }
         }.onFailure {
             Log.e("Failed:Hook host activity result bridge")
+            Log.i(it)
+        }
+    }
+
+    /**
+     * 备份与恢复页是宿主 Activity 实例，无 OnBackPressedDispatcherOwner；
+     * 任务执行中拦截返回，避免页面销毁后任务状态丢失。
+     */
+    private fun hookHostBackPress() {
+        runCatching {
+            findMethod("android.app.Activity") {
+                name == "onBackPressed" && parameterTypes.isEmpty()
+            }.hookBefore { param ->
+                val activity = param.thisObject as? Activity ?: return@hookBefore
+                if (WeTypeHostLauncher.isBackupPageBusy(activity)) {
+                    param.result = null
+                }
+            }
+        }.onFailure {
+            Log.e("Failed:Hook host back press guard")
             Log.i(it)
         }
     }
