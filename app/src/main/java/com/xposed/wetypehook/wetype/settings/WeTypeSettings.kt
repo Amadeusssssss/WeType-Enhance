@@ -29,6 +29,12 @@ object WeTypeSettings {
     private const val KEY_LAST_IMPORTED_REVISION = "last_imported_revision"
     private const val KEY_LIGHT_COLOR = "light_color"
     private const val KEY_DARK_COLOR = "dark_color"
+    private const val KEY_HYPER_MATERIAL_ENABLED = "hyper_material_enabled"
+    private const val KEY_GLASS_PARAMS = "glass_params"
+    private const val KEY_GLASS_BLOOM = "glass_bloom"
+    private const val KEY_GLASS_BLUR_SMALL = "glass_blur_small"
+    private const val KEY_GLASS_BLUR_LARGE = "glass_blur_large"
+    private const val KEY_GLASS_MATERIAL_TYPE = "glass_material_type"
     private const val KEY_BLUR_RADIUS = "blur_radius"
     private const val KEY_CORNER_RADIUS = "corner_radius"
     private const val KEY_KEY_CORNER_RADIUS = "key_corner_radius"
@@ -184,6 +190,7 @@ object WeTypeSettings {
     const val DEFAULT_CANDIDATE_PINYIN_LEFT_MARGIN_DP = 16
     const val DEFAULT_TOOLBAR_ICON_BG_OPACITY = 150
     const val DEFAULT_DISABLE_HOT_UPDATE = true
+    const val DEFAULT_HYPER_MATERIAL_ENABLED = false
 
     private val legacyKeyColorDefaults = mapOf(
         LIGHT_KEY_COLOR_GROUP_ID to 0xFFfcfcfe.toInt(),
@@ -262,7 +269,9 @@ object WeTypeSettings {
         val logoShowEnabled: Boolean = DEFAULT_LOGO_SHOW_ENABLED,
         val logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         val logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
-        val fontMode: Int = DEFAULT_FONT_MODE
+        val fontMode: Int = DEFAULT_FONT_MODE,
+        val hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
+        val glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides()
     )
 
     fun isShowCrossDeviceClipboard(context: Context): Boolean = readSnapshot(context).showCrossDeviceClipboard
@@ -645,6 +654,8 @@ object WeTypeSettings {
         logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
         fontMode: Int = DEFAULT_FONT_MODE,
+        hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
+        glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
         onPersisted: (Boolean) -> Unit = {}
     ): Boolean {
         val sanitizedAppearanceColors = WeTypeAppearanceColorGroups.groups.associate { group ->
@@ -698,6 +709,8 @@ object WeTypeSettings {
             logoColorMode = logoColorMode,
             logoCustomColor = logoCustomColor,
             fontMode = fontMode,
+            hyperMaterialEnabled = hyperMaterialEnabled,
+            glassOverrides = glassOverrides,
             onPersisted = onPersisted
         )
     }
@@ -739,6 +752,15 @@ object WeTypeSettings {
 
     fun isDisableHotUpdateXposed(): Boolean = readSnapshotXposed().disableHotUpdate
 
+    fun isHyperMaterialEnabled(context: Context): Boolean = readSnapshot(context).hyperMaterialEnabled
+
+    fun isHyperMaterialEnabledXposed(): Boolean = readSnapshotXposed().hyperMaterialEnabled
+
+    fun getGlassOverrides(context: Context): GlassMaterialOverrides =
+        readSnapshot(context).glassOverrides
+
+    fun getGlassOverridesXposed(): GlassMaterialOverrides = readSnapshotXposed().glassOverrides
+
     fun getAppearanceColorXposed(groupId: String): Int =
         readSnapshotXposed().appearanceColors[groupId]
             ?: WeTypeAppearanceColorGroups.findById(groupId)?.defaultColor
@@ -752,7 +774,7 @@ object WeTypeSettings {
             ?: defaultSnapshot()
     }
 
-    private fun readSnapshotXposed(): Snapshot {
+    internal fun readSnapshotXposed(): Snapshot {
         cachedXposedSnapshot?.let { return it }
 
         synchronized(remotePrefsLock) {
@@ -840,6 +862,8 @@ object WeTypeSettings {
         logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
         fontMode: Int = DEFAULT_FONT_MODE,
+        hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
+        glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
         onPersisted: (Boolean) -> Unit
     ): Boolean {
         val snapshot = Snapshot(
@@ -893,7 +917,9 @@ object WeTypeSettings {
             logoShowEnabled = logoShowEnabled,
             logoColorMode = normalizeLogoColorMode(logoColorMode),
             logoCustomColor = logoCustomColor,
-            fontMode = fontMode.coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM)
+            fontMode = fontMode.coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
+            hyperMaterialEnabled = hyperMaterialEnabled,
+            glassOverrides = glassOverrides
         )
         val appContext = context.applicationContext ?: context
         val localPreferences = appPreferences(appContext)
@@ -953,6 +979,7 @@ object WeTypeSettings {
                 snapshot.candidatePinyinLeftMarginDp
             )
             .putInt(KEY_TOOLBAR_ICON_BG_OPACITY, snapshot.toolbarIconBgOpacity)
+            .putBoolean(KEY_HYPER_MATERIAL_ENABLED, snapshot.hyperMaterialEnabled)
             .putBoolean(KEY_DISABLE_HOT_UPDATE, snapshot.disableHotUpdate)
             .putBoolean(KEY_SHOW_CROSS_DEVICE_CLIPBOARD, snapshot.showCrossDeviceClipboard)
             .putBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, snapshot.removeClipboardRetentionLimit)
@@ -985,6 +1012,21 @@ object WeTypeSettings {
             .putInt(KEY_FONT_MODE, snapshot.fontMode)
             .putBoolean(KEY_KEY_OPACITY_MIGRATED, true)
             .remove(KEY_KEY_OPACITY)
+        fun writeFloatParameters(key: String, values: List<Float>?, maxCount: Int) {
+            editor.remove("${key}_count")
+            repeat(maxCount) { editor.remove("${key}_$it") }
+            values?.let {
+                editor.putInt("${key}_count", it.size)
+                it.forEachIndexed { index, value -> editor.putFloat("${key}_$index", value) }
+            }
+        }
+        writeFloatParameters(KEY_GLASS_PARAMS, snapshot.glassOverrides.glass, 42)
+        writeFloatParameters(KEY_GLASS_BLOOM, snapshot.glassOverrides.bloom, 16)
+        editor.remove(KEY_GLASS_BLUR_SMALL).remove(KEY_GLASS_BLUR_LARGE).remove(KEY_GLASS_MATERIAL_TYPE)
+        snapshot.glassOverrides.blurRadii?.let {
+            editor.putInt(KEY_GLASS_BLUR_SMALL, it[0]).putInt(KEY_GLASS_BLUR_LARGE, it[1])
+        }
+        snapshot.glassOverrides.materialType?.let { editor.putInt(KEY_GLASS_MATERIAL_TYPE, it) }
         WeTypeAppearanceColorGroups.groups.forEach { group ->
             editor.putInt(
                 "$KEY_APPEARANCE_COLOR_PREFIX${group.id}",
@@ -1141,6 +1183,14 @@ object WeTypeSettings {
         putString(KEY_LOGO_COLOR_MODE, logoColorMode)
         putInt(KEY_LOGO_CUSTOM_COLOR, logoCustomColor)
         putInt(KEY_FONT_MODE, fontMode)
+        putBoolean(KEY_HYPER_MATERIAL_ENABLED, hyperMaterialEnabled)
+        glassOverrides.glass?.let { putFloatArray(KEY_GLASS_PARAMS, it.toFloatArray()) }
+        glassOverrides.bloom?.let { putFloatArray(KEY_GLASS_BLOOM, it.toFloatArray()) }
+        glassOverrides.blurRadii?.let {
+            putInt(KEY_GLASS_BLUR_SMALL, it[0])
+            putInt(KEY_GLASS_BLUR_LARGE, it[1])
+        }
+        glassOverrides.materialType?.let { putInt(KEY_GLASS_MATERIAL_TYPE, it) }
         putBundle(
             EXTRA_APPEARANCE_COLORS,
             Bundle().apply {
@@ -1254,7 +1304,21 @@ object WeTypeSettings {
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE) ?: defaults.logoColorMode),
             logoCustomColor = getInt(KEY_LOGO_CUSTOM_COLOR, defaults.logoCustomColor),
             fontMode = getInt(KEY_FONT_MODE, defaults.fontMode)
-                .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM)
+                .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
+            hyperMaterialEnabled = getBoolean(KEY_HYPER_MATERIAL_ENABLED, defaults.hyperMaterialEnabled),
+            glassOverrides = GlassMaterialOverrides(
+                glass = getFloatArray(KEY_GLASS_PARAMS)?.toList(),
+                blurRadii = if (containsKey(KEY_GLASS_BLUR_SMALL)) {
+                    listOf(
+                        getInt(KEY_GLASS_BLUR_SMALL, 0),
+                        getInt(KEY_GLASS_BLUR_LARGE, 0)
+                    )
+                } else null,
+                bloom = getFloatArray(KEY_GLASS_BLOOM)?.toList(),
+                materialType = if (containsKey(KEY_GLASS_MATERIAL_TYPE)) {
+                    getInt(KEY_GLASS_MATERIAL_TYPE, 0)
+                } else null
+            )
         )
     }
 
@@ -1356,9 +1420,15 @@ object WeTypeSettings {
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE, DEFAULT_LOGO_COLOR_MODE)),
             logoCustomColor = getInt(KEY_LOGO_CUSTOM_COLOR, DEFAULT_LOGO_CUSTOM_COLOR),
             fontMode = getInt(KEY_FONT_MODE, DEFAULT_FONT_MODE)
-                .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM)
+                .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
+            hyperMaterialEnabled = getBoolean(KEY_HYPER_MATERIAL_ENABLED, DEFAULT_HYPER_MATERIAL_ENABLED),
+            glassOverrides = readGlassOverrides()
         )
     }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun SharedPreferences.readGlassOverrides(): GlassMaterialOverrides =
+        GlassMaterialOverrides.read(all.filterValues { it != null } as Map<String, Any>)
 
     private fun migrateLegacyKeyOpacity(
         group: WeTypeAppearanceColorGroup,
@@ -1462,7 +1532,12 @@ object WeTypeSettings {
             contains(KEY_LOGO_SHOW_ENABLED) ||
             contains(KEY_LOGO_COLOR_MODE) ||
             contains(KEY_LOGO_CUSTOM_COLOR) ||
-            contains(KEY_FONT_MODE)
+            contains(KEY_FONT_MODE) ||
+            contains(KEY_HYPER_MATERIAL_ENABLED) ||
+            contains("${KEY_GLASS_PARAMS}_count") ||
+            contains(KEY_GLASS_BLUR_SMALL) ||
+            contains("${KEY_GLASS_BLOOM}_count") ||
+            contains(KEY_GLASS_MATERIAL_TYPE)
         ) {
             return true
         }

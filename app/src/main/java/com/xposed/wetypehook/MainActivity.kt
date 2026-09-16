@@ -17,6 +17,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -70,9 +72,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -87,6 +91,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -101,6 +107,10 @@ import com.kyant.capsule.ContinuousRoundedRectangle
 import com.xposed.wetypehook.wetype.gesture.GestureAction
 import com.xposed.wetypehook.wetype.graphics.WeTypeBloomStrokeDrawable
 import com.xposed.wetypehook.wetype.graphics.WeTypeCornerRadii
+import com.xposed.wetypehook.wetype.graphics.WeTypeHyperMaterial
+import com.xposed.wetypehook.wetype.settings.GlassMaterialOverrides
+import com.xposed.wetypehook.wetype.settings.GlassOverrideField
+import com.xposed.wetypehook.wetype.settings.GlassSliderParameter
 import com.xposed.wetypehook.wetype.graphics.createWeTypeContinuousRoundedPath
 import com.xposed.wetypehook.wetype.settings.DARK_KEY_COLOR_GROUP_ID
 import com.xposed.wetypehook.wetype.settings.LIGHT_KEY_COLOR_GROUP_ID
@@ -132,6 +142,7 @@ import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.popup.OverlayDropdownPopup
 import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.basic.ArrowRight
 import top.yukonga.miuix.kmp.icon.extended.Info
 import top.yukonga.miuix.kmp.icon.extended.Ok
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -586,6 +597,36 @@ private fun WeTypeSettingsScreen(
     var fontMode by rememberSaveable {
         mutableIntStateOf(snapshot.fontMode)
     }
+    val glassInput = rememberSaveable(
+        saver = listSaver(
+            save = { it.toList() },
+            restore = { restored -> mutableStateListOf(*restored.toTypedArray()) }
+        )
+    ) {
+        mutableStateListOf(
+            *GlassOverrideField.entries.map { snapshot.glassOverrides.text(it) }.toTypedArray()
+        )
+    }
+    val glassSupported = remember { WeTypeHyperMaterial.areGlassOverridesAvailable() }
+    val parsedGlassOverrides = runCatching {
+        GlassMaterialOverrides.parse(GlassOverrideField.entries.associateWith { glassInput[it.ordinal] })
+    }.getOrNull()
+    var previewGlassOverrides by remember { mutableStateOf(snapshot.glassOverrides) }
+    LaunchedEffect(parsedGlassOverrides) {
+        // Recreating a native material during every slider tick would flash its fallback tint.
+        delay(120)
+        parsedGlassOverrides?.let { previewGlassOverrides = it }
+    }
+    var hyperMaterialEnabled by rememberSaveable { mutableStateOf(snapshot.hyperMaterialEnabled) }
+    var hyperMaterialAvailable by remember(preferencesContext) {
+        mutableStateOf(WeTypeHyperMaterial.isAvailable(preferencesContext))
+    }
+    DisposableEffect(preferencesContext) {
+        val stopObserving = WeTypeHyperMaterial.observeAvailability(preferencesContext) {
+            hyperMaterialAvailable = WeTypeHyperMaterial.isAvailable(preferencesContext)
+        }
+        onDispose { stopObserving() }
+    }
     val appearanceGroupColors = rememberSaveable(
         saver = listSaver(
             save = { it.toList() },
@@ -640,7 +681,14 @@ private fun WeTypeSettingsScreen(
         return appearanceGroupColors[groupIndex(group.id)]
     }
 
-    fun saveSettings(successMessage: Int = R.string.settings_saved): Boolean {
+    fun saveSettings(
+        successMessage: Int = R.string.settings_saved,
+        glassOverridesToSave: GlassMaterialOverrides? = parsedGlassOverrides
+    ): Boolean {
+        if (glassOverridesToSave == null) {
+            Toast.makeText(context, R.string.settings_glass_invalid, Toast.LENGTH_SHORT).show()
+            return false
+        }
         return WeTypeSettings.save(
             context = preferencesContext,
             lightColor = lightColor,
@@ -688,6 +736,8 @@ private fun WeTypeSettingsScreen(
             logoColorMode = logoColorMode,
             logoCustomColor = parseLogoCustomColor(logoCustomColorInput),
             fontMode = fontMode,
+            hyperMaterialEnabled = hyperMaterialEnabled,
+            glassOverrides = glassOverridesToSave,
             onPersisted = { saved ->
                 Toast.makeText(
                     context,
@@ -742,11 +792,17 @@ private fun WeTypeSettingsScreen(
         logoColorMode = WeTypeSettings.DEFAULT_LOGO_COLOR_MODE
         logoCustomColorInput = formatRgb(WeTypeSettings.DEFAULT_LOGO_CUSTOM_COLOR)
         fontMode = WeTypeSettings.DEFAULT_FONT_MODE
+        glassInput.indices.forEach { glassInput[it] = "" }
+        previewGlassOverrides = GlassMaterialOverrides()
+        hyperMaterialEnabled = WeTypeSettings.DEFAULT_HYPER_MATERIAL_ENABLED
         appearanceGroups.forEachIndexed { index, group ->
             appearanceGroupColors[index] = group.defaultColor
         }
         syncEditorFromState()
-        saveSettings(successMessage = R.string.settings_reset_toast)
+        saveSettings(
+            successMessage = R.string.settings_reset_toast,
+            glassOverridesToSave = GlassMaterialOverrides()
+        )
     }
 
     if (isEmbeddedHost) {
@@ -877,6 +933,16 @@ private fun WeTypeSettingsScreen(
                         onEdgeHighlightEnabledChange = { edgeHighlightEnabled = it },
                         edgeHighlightIntensity = edgeHighlightIntensity,
                         onEdgeHighlightIntensityChange = { edgeHighlightIntensity = it },
+                        hyperMaterialEnabled = hyperMaterialEnabled,
+                        onHyperMaterialEnabledChange = { hyperMaterialEnabled = it },
+                        hyperMaterialAvailable = hyperMaterialAvailable,
+                        glassSupported = glassSupported,
+                        glassInput = glassInput,
+                        onGlassInputChange = { index, value -> glassInput[index] = value },
+                        onGlassReset = {
+                            val defaults = GlassMaterialOverrides().withGlassEnabled(true)
+                            GlassOverrideField.entries.forEach { glassInput[it.ordinal] = defaults.text(it) }
+                        },
                         toolbarIconBgOpacity = toolbarIconBgOpacity,
                         onToolbarIconBgOpacityChange = { toolbarIconBgOpacity = it },
                         appearanceSectionGroups = appearanceSectionGroups,
@@ -1162,6 +1228,13 @@ private fun LazyListScope.AppearanceTabContent(
     onEdgeHighlightEnabledChange: (Boolean) -> Unit,
     edgeHighlightIntensity: Int,
     onEdgeHighlightIntensityChange: (Int) -> Unit,
+    hyperMaterialEnabled: Boolean,
+    onHyperMaterialEnabledChange: (Boolean) -> Unit,
+    hyperMaterialAvailable: Boolean,
+    glassSupported: Boolean,
+    glassInput: List<String>,
+    onGlassInputChange: (Int, String) -> Unit,
+    onGlassReset: () -> Unit,
     toolbarIconBgOpacity: Int,
     onToolbarIconBgOpacityChange: (Int) -> Unit,
     appearanceSectionGroups: List<WeTypeAppearanceColorGroup>,
@@ -1218,7 +1291,8 @@ private fun LazyListScope.AppearanceTabContent(
                         edgeHighlightIntensity = edgeHighlightIntensity,
                         lightKeyColor = lightKeyColor,
                         darkKeyColor = darkKeyColor,
-                        isDark = currentModeIsDark
+                        isDark = currentModeIsDark,
+                        hyperMaterialEnabled = hyperMaterialEnabled
                     )
                 }
             }
@@ -1349,9 +1423,30 @@ private fun LazyListScope.AppearanceTabContent(
         ) {
             Column {
                 MiuixSwitchWidget(
+                    title = stringResource(R.string.settings_hyper_material_title),
+                    description = stringResource(
+                        if (hyperMaterialAvailable) R.string.settings_hyper_material_desc
+                        else R.string.settings_hyper_material_unavailable
+                    ),
+                    checked = hyperMaterialEnabled,
+                    enabled = hyperMaterialAvailable,
+                    onCheckedChange = onHyperMaterialEnabledChange
+                )
+                if (hyperMaterialEnabled) {
+                    HorizontalDivider()
+                    GlassOverrideEditor(
+                        values = glassInput,
+                        enabled = hyperMaterialAvailable && glassSupported,
+                        onValueChange = onGlassInputChange,
+                        onReset = onGlassReset
+                    )
+                }
+                HorizontalDivider()
+                MiuixSwitchWidget(
                     title = stringResource(R.string.settings_edge_highlight_title),
                     description = stringResource(R.string.settings_edge_highlight_desc),
                     checked = edgeHighlightEnabled,
+                    enabled = !hyperMaterialEnabled,
                     onCheckedChange = onEdgeHighlightEnabledChange
                 )
 
@@ -1360,6 +1455,7 @@ private fun LazyListScope.AppearanceTabContent(
                         title = stringResource(R.string.settings_edge_highlight_intensity_title),
                         value = edgeHighlightIntensity,
                         max = 200,
+                        enabled = !hyperMaterialEnabled,
                         onValueChange = onEdgeHighlightIntensityChange
                     )
                 }
@@ -1370,6 +1466,7 @@ private fun LazyListScope.AppearanceTabContent(
                     title = stringResource(R.string.settings_blur_title),
                     value = blurRadius,
                     max = 100,
+                    enabled = !hyperMaterialEnabled,
                     onValueChange = onBlurRadiusChange
                 )
 
@@ -1459,7 +1556,8 @@ private fun PreviewSection(
     edgeHighlightIntensity: Int,
     lightKeyColor: Int,
     darkKeyColor: Int,
-    isDark: Boolean
+    isDark: Boolean,
+    hyperMaterialEnabled: Boolean = false
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp),
@@ -1487,7 +1585,8 @@ private fun PreviewSection(
                     edgeHighlightIntensity = edgeHighlightIntensity,
                     lightKeyColor = lightKeyColor,
                     darkKeyColor = darkKeyColor,
-                    isDark = isDark
+                    isDark = isDark,
+                    hyperMaterialEnabled = hyperMaterialEnabled
                 )
             }
         }
@@ -1504,9 +1603,12 @@ private fun PreviewCard(
     edgeHighlightIntensity: Int,
     lightKeyColor: Int,
     darkKeyColor: Int,
-    isDark: Boolean
+    isDark: Boolean,
+    hyperMaterialEnabled: Boolean = false
 ) {
     val context = LocalContext.current
+    // 系统材质开时预览显示 fallback 底色（真机材质只在 HyperOS 上生效）。
+    val displayColor = if (hyperMaterialEnabled) WeTypeHyperMaterial.fallbackColor(isDark) else color
     val weTypeFontFamily = remember(context) {
         FontFamily(
             Font(
@@ -1540,27 +1642,35 @@ private fun PreviewCard(
                     .fillMaxWidth()
                     .defaultMinSize(minHeight = previewMinHeight)
                     .weTypePreviewBloom(
-                        color = color,
+                        color = displayColor,
                         cornerRadius = previewCorner,
-                        edgeHighlightEnabled = edgeHighlightEnabled,
+                        edgeHighlightEnabled = edgeHighlightEnabled && !hyperMaterialEnabled,
                         edgeHighlightIntensity = edgeHighlightIntensity,
                         isDark = isDark
                     )
                     .clip(previewShape)
             ) {
-                Image(
-                    painter = painterResource(R.drawable.natural_texture_004),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .matchParentSize()
-                        .blur((blurRadius / 3f).coerceAtLeast(0f).dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(ComposeColor(color))
-                )
+                if (hyperMaterialEnabled) {
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(ComposeColor(displayColor))
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(R.drawable.natural_texture_004),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .blur((blurRadius / 3f).coerceAtLeast(0f).dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .background(ComposeColor(color))
+                    )
+                }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1570,7 +1680,7 @@ private fun PreviewCard(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (isDark) stringResource(R.string.settings_preview_mode_dark) else stringResource(R.string.settings_preview_mode_light),
-                            color = previewTextColor(color).copy(alpha = 0.7f),
+                            color = previewTextColor(displayColor).copy(alpha = 0.7f),
                             style = MiuixTheme.textStyles.body2
                         )
                         Spacer(modifier = Modifier.height(4.dp))
@@ -1584,8 +1694,8 @@ private fun PreviewCard(
                                     .padding(horizontal = 14.dp, vertical = 8.dp)
                             ) {
                                 Text(
-                                    text = formatArgb(color),
-                                    color = previewTextColor(color),
+                                    text = if (hyperMaterialEnabled) stringResource(R.string.settings_hyper_material_preview) else formatArgb(color),
+                                    color = previewTextColor(displayColor),
                                     style = MiuixTheme.textStyles.headline1,
                                     fontFamily = weTypeFontFamily
                                 )
@@ -1598,19 +1708,23 @@ private fun PreviewCard(
                                         .background(ComposeColor(previewKeyColor))
                                         .padding(horizontal = 14.dp, vertical = 8.dp)
                                 ) {
-                                    Text(
-                                        text = i.toString(),
-                                        color = previewTextColor(color),
-                                        style = MiuixTheme.textStyles.headline1,
-                                        fontFamily = weTypeFontFamily
-                                    )
+                                Text(
+                                    text = i.toString(),
+                                    color = previewTextColor(displayColor),
+                                    style = MiuixTheme.textStyles.headline1,
+                                    fontFamily = weTypeFontFamily
+                                )
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "${stringResource(R.string.settings_blur_label)} $blurRadius · ${stringResource(R.string.settings_corner_label)} $cornerRadius",
-                            color = previewTextColor(color).copy(alpha = 0.7f),
+                            text = if (hyperMaterialEnabled) {
+                                "${stringResource(R.string.settings_corner_label)} $cornerRadius"
+                            } else {
+                                "${stringResource(R.string.settings_blur_label)} $blurRadius · ${stringResource(R.string.settings_corner_label)} $cornerRadius"
+                            },
+                            color = previewTextColor(displayColor).copy(alpha = 0.7f),
                             style = MiuixTheme.textStyles.body2
                         )
                     }
@@ -1859,11 +1973,32 @@ private fun SliderPreferenceItem(
     title: String,
     value: Int,
     max: Int,
+    enabled: Boolean = true,
     onValueChange: (Int) -> Unit
+) = SliderPreferenceItem(
+    title = title,
+    value = value.toFloat(),
+    range = 0f..max.toFloat(),
+    step = 1f,
+    enabled = enabled,
+    format = { it.roundToInt().toString() },
+    onValueChange = { onValueChange(it.roundToInt()) }
+)
+
+@Composable
+private fun SliderPreferenceItem(
+    title: String,
+    value: Float,
+    range: ClosedFloatingPointRange<Float>,
+    step: Float,
+    enabled: Boolean = true,
+    format: (Float) -> String,
+    onValueChange: (Float) -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .alpha(if (enabled) 1f else 0.38f)
             .padding(16.dp)
     ) {
         Row(
@@ -1876,18 +2011,187 @@ private fun SliderPreferenceItem(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = "$value",
+                text = format(value),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 style = MiuixTheme.textStyles.main
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
         Slider(
-            value = value.toFloat(),
-            onValueChange = { onValueChange(it.roundToInt()) },
-            valueRange = 0f..max.toFloat(),
-            modifier = Modifier.fillMaxWidth()
+            enabled = enabled,
+            value = value.coerceIn(range),
+            onValueChange = { onValueChange(((it / step).roundToInt() * step).coerceIn(range)) },
+            valueRange = range,
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = title }
         )
+    }
+}
+
+@Composable
+private fun GlassOverrideEditor(
+    values: List<String>,
+    enabled: Boolean,
+    onValueChange: (Int, String) -> Unit,
+    onReset: () -> Unit
+) {
+    fun read(field: GlassOverrideField) = runCatching {
+        GlassMaterialOverrides.parse(mapOf(field to values[field.ordinal]))
+    }.getOrNull()
+    val glass = read(GlassOverrideField.GLASS)?.glass
+    val radii = read(GlassOverrideField.BLUR_RADII)?.blurRadii ?: GlassSliderParameter.startingBlurRadii()
+    val bloom = read(GlassOverrideField.BLOOM)?.bloom ?: GlassSliderParameter.startingBloom()
+    val valid = GlassOverrideField.entries.all { read(it) != null }
+    MiuixSwitchWidget(
+        title = stringResource(R.string.settings_glass_custom),
+        description = stringResource(
+            if (enabled) R.string.settings_glass_custom_desc else R.string.settings_glass_unavailable
+        ),
+        checked = glass != null,
+        enabled = enabled && valid,
+        onCheckedChange = { checked ->
+            val current = GlassMaterialOverrides(glass, radii, bloom)
+            val updated = current.withGlassEnabled(checked)
+            GlassOverrideField.entries.forEach { onValueChange(it.ordinal, updated.text(it)) }
+        }
+    )
+    if (glass == null && valid) return
+    HorizontalDivider()
+    if (glass != null) {
+        val labels = mapOf(
+            GlassSliderParameter.LIGHT_ANGLE to R.string.settings_glass_light_angle,
+            GlassSliderParameter.LIGHT_INTENSITY to R.string.settings_glass_light_intensity,
+            GlassSliderParameter.REFRACTION to R.string.settings_glass_refraction,
+            GlassSliderParameter.DEPTH to R.string.settings_glass_depth,
+            GlassSliderParameter.SPLAY to R.string.settings_glass_splay,
+            GlassSliderParameter.THICKNESS to R.string.settings_glass_thickness,
+            GlassSliderParameter.EDGE_CURVE to R.string.settings_glass_edge_curve
+        )
+        @Composable
+        fun ParameterSlider(parameter: GlassSliderParameter, bloomMode: Boolean = false) {
+            val label = stringResource(
+                if (!bloomMode && parameter == GlassSliderParameter.LIGHT_INTENSITY) R.string.settings_glass_edge_lighten
+                else if (!bloomMode && parameter == GlassSliderParameter.SPLAY) R.string.settings_glass_lighten_angle
+                else labels.getValue(parameter)
+            )
+            SliderPreferenceItem(
+                title = if (bloomMode) stringResource(R.string.settings_glass_highlight_parameter, label) else label,
+                value = if (bloomMode) parameter.readBloom(bloom) else parameter.read(glass),
+                range = parameter.range,
+                step = parameter.step,
+                enabled = enabled && valid,
+                format = { value ->
+                    when (parameter) {
+                        GlassSliderParameter.LIGHT_ANGLE, GlassSliderParameter.SPLAY -> "${value.roundToInt()}°"
+                        GlassSliderParameter.LIGHT_INTENSITY -> "${value.roundToInt()}%"
+                        GlassSliderParameter.DEPTH, GlassSliderParameter.THICKNESS -> "${value.roundToInt()} px"
+                        else -> String.format(java.util.Locale.ROOT, "%.2f", value)
+                    }
+                },
+                onValueChange = {
+                    val field = if (bloomMode) GlassOverrideField.BLOOM else GlassOverrideField.GLASS
+                    val updated = if (bloomMode) parameter.writeBloom(bloom, it) else parameter.write(glass, it)
+                    onValueChange(field.ordinal, updated.joinToString(", "))
+                }
+            )
+        }
+        GlassSliderParameter.entries.forEach { ParameterSlider(it) }
+        val unsupported = stringResource(R.string.settings_glass_unsupported)
+        SliderPreferenceItem(
+            title = stringResource(R.string.settings_glass_dispersion),
+            value = 0f, range = 0f..100f, step = 1f,
+            enabled = false, format = { unsupported }, onValueChange = {}
+        )
+        listOf(R.string.settings_glass_frost_small, R.string.settings_glass_frost_large).forEachIndexed { index, title ->
+            SliderPreferenceItem(
+                title = stringResource(title), value = radii[index].toFloat(),
+                range = 0f..400f, step = 1f, enabled = enabled && valid,
+                format = { "${it.roundToInt()} px" },
+                onValueChange = { value ->
+                    val updated = radii.toMutableList().apply { this[index] = value.roundToInt() }
+                    onValueChange(GlassOverrideField.BLUR_RADII.ordinal, updated.joinToString(", "))
+                }
+            )
+        }
+        GlassSliderParameter.entries.filter { it.bloomIndex != null }.forEach {
+            ParameterSlider(it, bloomMode = true)
+        }
+    }
+    HorizontalDivider()
+    var rawExpanded by rememberSaveable { mutableStateOf(false) }
+    val showRaw = rawExpanded || !valid
+    val arrowRotation by animateFloatAsState(
+        targetValue = if (showRaw) 90f else 0f,
+        animationSpec = tween(durationMillis = 200),
+        label = "GlassRawArrowRotation"
+    )
+    BasicComponent(
+        title = stringResource(R.string.settings_glass_raw),
+        summary = stringResource(if (showRaw) R.string.settings_glass_collapse else R.string.settings_glass_expand),
+        onClick = { rawExpanded = !rawExpanded },
+        endActions = {
+            Icon(
+                imageVector = MiuixIcons.Basic.ArrowRight,
+                contentDescription = null,
+                tint = MiuixTheme.colorScheme.onSurfaceVariantActions,
+                modifier = Modifier.size(width = 10.dp, height = 16.dp).rotate(arrowRotation)
+            )
+        }
+    )
+    if (showRaw) GlassRawOverrideEditor(values, enabled, onValueChange)
+    ArrowPreference(
+        title = stringResource(R.string.settings_glass_reset),
+        summary = stringResource(R.string.settings_glass_reset_desc),
+        onClick = onReset
+    )
+}
+
+@Composable
+private fun GlassRawOverrideEditor(
+    values: List<String>,
+    enabled: Boolean,
+    onValueChange: (Int, String) -> Unit
+) {
+    val titles = listOf(
+        R.string.settings_glass_params, R.string.settings_glass_blur,
+        R.string.settings_glass_bloom, R.string.settings_glass_type
+    )
+    val descriptions = listOf(
+        R.string.settings_glass_params_desc, R.string.settings_glass_blur_desc,
+        R.string.settings_glass_bloom_desc, R.string.settings_glass_type_desc
+    )
+    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+        Text(
+            text = stringResource(R.string.settings_glass_raw_summary),
+            style = MiuixTheme.textStyles.body2,
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+        )
+        GlassOverrideField.entries.filter { it != GlassOverrideField.MATERIAL_TYPE }.forEach { field ->
+            val index = field.ordinal
+            val valid = GlassMaterialOverrides.isValid(field, values[index])
+            Column(Modifier.fillMaxWidth().padding(top = 16.dp).alpha(if (enabled) 1f else 0.38f)) {
+                Text(stringResource(titles[index]), style = MiuixTheme.textStyles.main)
+                Text(
+                    stringResource(descriptions[index]), style = MiuixTheme.textStyles.body2,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                )
+                Spacer(Modifier.height(8.dp))
+                TextField(
+                    value = values[index],
+                    enabled = enabled,
+                    onValueChange = { if (it.length <= 4096) onValueChange(index, it) },
+                    label = stringResource(R.string.settings_glass_default),
+                    singleLine = field == GlassOverrideField.MATERIAL_TYPE || field == GlassOverrideField.BLUR_RADII,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (!valid) {
+                    Text(
+                        stringResource(R.string.settings_glass_invalid),
+                        color = MiuixTheme.colorScheme.error,
+                        style = MiuixTheme.textStyles.body2
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -1896,18 +2200,22 @@ private fun MiuixSwitchWidget(
     title: String,
     description: String? = null,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit
 ) {
     val toggleAction = {
-        onCheckedChange(!checked)
+        if (enabled) onCheckedChange(!checked)
     }
 
     BasicComponent(
         title = title,
+        modifier = Modifier.alpha(if (enabled) 1f else 0.38f),
+        enabled = enabled,
         summary = description,
         onClick = toggleAction,
         endActions = {
             Switch(
+                enabled = enabled,
                 checked = checked,
                 onCheckedChange = onCheckedChange
             )
