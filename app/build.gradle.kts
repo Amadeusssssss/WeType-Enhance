@@ -76,4 +76,6 @@ dependencies {
     // S2 剪贴板搜索：TinyPinyin 轻量拼音（不引 jieba；原坐标 com.github.promeg:tinypinyin:2.0.3 已不可用——见信箱说明，改用同源 MavenCentral 坐标）
     implementation("io.github.biezhi:TinyPinyin:2.0.3.RELEASE")
     testImplementation("junit:junit:4.13.2")
+    // 上游 HostPreferencesFileTest 在 JVM 单测需要 XmlPullParser 实现
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
 }
