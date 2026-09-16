@@ -11,7 +11,7 @@ class WebDavLogicTest {
     fun normalizeBaseAddsHttpsAndTrimsTrailingSlash() {
         assertEquals("https://dav.example.com", WebDavPaths.normalizeBase("dav.example.com/"))
         assertEquals("https://dav.example.com", WebDavPaths.normalizeBase(" https://dav.example.com// "))
-        assertEquals("http://192.168.1.10:5244/dav", WebDavPaths.normalizeBase("http://192.168.1.10:5244/dav/"))
+        assertEquals("http://dav.example.com:5244/dav", WebDavPaths.normalizeBase("http://dav.example.com:5244/dav/"))
         assertEquals("", WebDavPaths.normalizeBase("  "))
     }
 
