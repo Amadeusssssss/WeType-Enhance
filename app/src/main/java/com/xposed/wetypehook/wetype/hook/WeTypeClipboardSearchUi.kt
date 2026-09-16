@@ -363,6 +363,13 @@ internal object WeTypeClipboardSearchUi {
         val exit = exitListenerInfo?.let { readNativeField(it, "mOnClickListener") } as? View.OnClickListener
         val hint = box.hint
         val mode = parts.modeTv.text
+        // 上行左图标快照：独立ImageView drawable + compound左drawable（二选一命中的才记）。
+        val modeIcon = parts.modeIcon
+        val modeIconDrawable = runCatching { modeIcon?.drawable?.constantState?.newDrawable() ?: modeIcon?.drawable }.getOrNull()
+        val modeIconTint = runCatching { modeIcon?.imageTintList }.getOrNull()
+        val modeIconFilter = runCatching { modeIcon?.colorFilter }.getOrNull()
+        val modeIconAlpha = runCatching { modeIcon?.alpha }.getOrNull() ?: 0.4f
+        val modeCompounds = runCatching { parts.modeTv.compoundDrawables }.getOrNull()?.copyOf()
         val dropdown = parts.dropdown
         val getter = dropdown.javaClass.getDeclaredMethod("getOnItemClick").apply { isAccessible = true }
         val click = getter.invoke(dropdown)
@@ -380,6 +387,21 @@ internal object WeTypeClipboardSearchUi {
             box.setOnKeyListener(key)
             box.hint = hint
             parts.modeTv.text = mode
+            // 图标还账：ImageView优先，compound兜底；只恢复我方改过的那一路。
+            runCatching {
+                if (modeIcon != null) {
+                    modeIcon.clearColorFilter()
+                    modeIcon.imageTintList = modeIconTint
+                    if (modeIconDrawable != null) {
+                        modeIcon.setImageDrawable(modeIconDrawable)
+                    }
+                    modeIcon.alpha = modeIconAlpha
+                } else if (modeCompounds != null) {
+                    parts.modeTv.setCompoundDrawables(
+                        modeCompounds[0], modeCompounds[1], modeCompounds[2], modeCompounds[3]
+                    )
+                }
+            }
             parts.exit?.setOnClickListener(exit)
             setter.invoke(dropdown, click)
             bind.invoke(adapter, languageList)
@@ -394,6 +416,7 @@ internal object WeTypeClipboardSearchUi {
         nativeKRefF41 = null
         nativeKEditRefF41 = null
         nativeKModeTvRefF41 = null
+        nativeKModeIconRefF41 = null
         searchManager = null
         runCatching { restore?.invoke() }.onFailure { AndroidLog.e(TAG, "native search restoration failed: ${it.message}") }
     }
@@ -555,6 +578,12 @@ internal object WeTypeClipboardSearchUi {
     private var nativeKEditRefF41: java.lang.ref.WeakReference<EditText>? = null
     @Volatile
     private var nativeKModeTvRefF41: java.lang.ref.WeakReference<android.widget.TextView>? = null
+    @Volatile
+    private var nativeKModeIconRefF41: java.lang.ref.WeakReference<ImageView>? = null
+    @Volatile
+    private var f41IconHooked = false
+    @Volatile
+    private var cachedSearchIconRes: Int? = null
     private val nativeKWatchersF41: MutableMap<EditText, TextWatcher> =
         Collections.synchronizedMap(WeakHashMap<EditText, TextWatcher>())
     private fun searchModeNameF41(mode: Int): String = when (mode) {
@@ -700,6 +729,7 @@ internal object WeTypeClipboardSearchUi {
             // F31：J3执行完后钳mCandidateView LP高（条挂载才写，未挂载不动）。
             hookCandidateWindowAfterJ3F31(classLoader)
             hookClipboardPanelToggle(classLoader)
+            hookModeIconStability(classLoader)
         } catch (t: Throwable) {
             AndroidLog.e(TAG, "install search UI failed: ${t.message}")
         }
@@ -3044,7 +3074,8 @@ internal object WeTypeClipboardSearchUi {
         val edit: EditText,
         val modeTv: android.widget.TextView,
         val dropdown: ViewGroup,
-        val exit: View?
+        val exit: View?,
+        val modeIcon: ImageView? = null
     )
 
     /** F41：k内件定位（只读+按型/文案现取，不写死字段名/id值；任一缺失返null fail-closed）。 */
@@ -3103,7 +3134,9 @@ internal object WeTypeClipboardSearchUi {
             // modeTv确证：取operationBar容器内（k直系ConstraintLayout子链）文本最短者为准；
             // 上面BFS首个文本可能误取tip（GONE），此处以isShown+父链operationBar旁证纠正。
             val confirmedMode = runCatching { confirmModeTvInOpBarF41(k, modeTv) }.getOrNull() ?: modeTv
-            NativeKPartsF41(k, edit, confirmedMode, dropdown, exitTv)
+            // 上行左翻译图标：modeTv同级ImageView（只读定位，找不到即null，图标替换fail-open不拦mount）。
+            val modeIcon = runCatching { findModeIconF41(k, confirmedMode) }.getOrNull()
+            NativeKPartsF41(k, edit, confirmedMode, dropdown, exitTv, modeIcon)
         } catch (t: Throwable) {
             AndroidLog.e(TAG, "strip F41 reuse parts failed: $t")
             null
@@ -3145,6 +3178,178 @@ internal object WeTypeClipboardSearchUi {
             fallback
         } catch (_: Throwable) {
             fallback
+        }
+    }
+
+    /** F41上行左图标定位（只读）：沿modeTv上溯3层祖先，每层扫直接ImageView子视图；找不到返null。 */
+    private fun findModeIconF41(k: View, modeTv: android.widget.TextView): ImageView? {
+        return try {
+            var node: View? = modeTv
+            var depth = 0
+            while (node != null && node !== k && depth < 3) {
+                val parent = node.parent as? ViewGroup ?: break
+                var sizedHit: ImageView? = null
+                var anyHit: ImageView? = null
+                val modeIdx = (0 until parent.childCount).firstOrNull { parent.getChildAt(it) === node } ?: -1
+                // 离modeTv最近的ImageView优先（通常在左侧）。
+                val order = (0 until minOf(parent.childCount, 16)).sortedBy { kotlin.math.abs(it - modeIdx) }
+                for (i in order) {
+                    val c = parent.getChildAt(i) as? ImageView ?: continue
+                    if (c === node) continue
+                    if (anyHit == null) anyHit = c
+                    if (c.visibility == View.VISIBLE && c.width > 0 && c.height > 0) {
+                        sizedHit = c
+                        break
+                    }
+                }
+                if (sizedHit != null) return sizedHit
+                // 布局未量测时（宽高=0）也记候选，但优先往上找已量测的；都没有才用未量测兜底。
+                if (anyHit != null && depth == 2) return anyHit
+                if (anyHit != null && depth == 0) {
+                    // 同级有ImageView但尚未量测：先记下，继续往上看有没有更好的，回来再用它。
+                    var up: ViewGroup? = parent.parent as? ViewGroup
+                    var upHit: ImageView? = null
+                    if (up != null) {
+                        for (j in 0 until minOf(up.childCount, 16)) {
+                            val c = up.getChildAt(j) as? ImageView ?: continue
+                            if (c.visibility == View.VISIBLE && c.width > 0 && c.height > 0) {
+                                upHit = c
+                                break
+                            }
+                        }
+                    }
+                    return upHit ?: anyHit
+                }
+                node = parent
+                depth++
+            }
+            null
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    /** F41上行左图标外观同步：颜色与"全量匹配"文字完全一致（深浅色跟随），alpha与文字对齐。 */
+    private fun syncModeIconAppearance(icon: ImageView) {
+        try {
+            val modeTv = nativeKModeTvRefF41?.get()
+            val targetColor = if (modeTv != null && Color.alpha(modeTv.currentTextColor) > 0) {
+                modeTv.currentTextColor
+            } else {
+                resolveThemeIconColor(icon)
+            }
+            icon.setColorFilter(targetColor, PorterDuff.Mode.SRC_IN)
+            icon.alpha = modeTv?.alpha ?: 1.0f
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "strip F41 sync icon appearance failed: $t")
+        }
+    }
+
+    /** 判断ImageView是否为k卡片内的翻译/搜索图标（Child 0 of operationBarContainer）。 */
+    private fun isTranslatingLanguageIcon(iv: ImageView): Boolean {
+        return try {
+            val k = nativeKRefF41?.get() ?: return false
+            val parent = iv.parent as? ViewGroup ?: return false
+            parent.parent?.parent === k && parent.indexOfChild(iv) == 0
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
+    /** F41上行左图标防闪回Hook：宿主onAttachedToWindow协程会重复设回翻译图标，在此拦截锁定为搜索图标并同步深浅色。 */
+    private fun hookModeIconStability(classLoader: ClassLoader) {
+        if (f41IconHooked) return
+        f41IconHooked = true
+        try {
+            val method = ImageView::class.java.getDeclaredMethod("setImageResource", Int::class.javaPrimitiveType)
+            method.isAccessible = true
+            method.hookBefore { param ->
+                try {
+                    val iv = param.thisObject as? ImageView ?: return@hookBefore
+                    if (!translatorShellByUs) return@hookBefore
+                    val icon = nativeKModeIconRefF41?.get()
+                    val isTarget = (icon != null && iv === icon) || isTranslatingLanguageIcon(iv)
+                    if (!isTarget) return@hookBefore
+                    val searchRes = cachedSearchIconRes ?: resolveSearchIconRes(iv, hostClassLoader ?: iv.context?.classLoader ?: classLoader)
+                    if (searchRes != null) {
+                        val incoming = param.args[0] as? Int
+                        if (incoming != searchRes) {
+                            param.args[0] = searchRes
+                            AndroidLog.i(TAG, "strip F41 icon: intercepted setImageResource $incoming->$searchRes (re-locked search icon)")
+                        }
+                    }
+                } catch (t: Throwable) {
+                    AndroidLog.e(TAG, "strip F41 mode icon hookBefore failed: $t")
+                }
+            }
+            method.hookAfter { param ->
+                try {
+                    val iv = param.thisObject as? ImageView ?: return@hookAfter
+                    if (!translatorShellByUs) return@hookAfter
+                    val icon = nativeKModeIconRefF41?.get()
+                    val isTarget = (icon != null && iv === icon) || isTranslatingLanguageIcon(iv)
+                    if (!isTarget) return@hookAfter
+                    syncModeIconAppearance(iv)
+                } catch (t: Throwable) {
+                    AndroidLog.e(TAG, "strip F41 mode icon hookAfter failed: $t")
+                }
+            }
+            AndroidLog.i(TAG, "strip F41 mode icon stability hook installed")
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "strip F41 mode icon stability hook install failed: $t")
+            f41IconHooked = false
+        }
+    }
+
+    /** F41上行左图标替换：翻译图标换宿主搜索图标，颜色和亮度同步文字；无图标或无宿主res即保持原生。 */
+    private fun applySearchIconF41(parts: NativeKPartsF41) {
+        try {
+            fun doApply() {
+                try {
+                    val cl = hostClassLoader ?: parts.k.context?.classLoader
+                    if (cl == null) {
+                        AndroidLog.e(TAG, "strip F41 icon: SKIP host loader missing (keep translate icon)")
+                        return
+                    }
+                    val searchRes = resolveSearchIconRes(parts.k, cl)
+                    if (searchRes == null) {
+                        AndroidLog.e(TAG, "strip F41 icon: SKIP no host search drawable (keep translate icon)")
+                        return
+                    }
+                    cachedSearchIconRes = searchRes
+                    val icon = parts.modeIcon
+                    if (icon != null && icon.parent != null) {
+                        runCatching {
+                            icon.setImageResource(searchRes)
+                            syncModeIconAppearance(icon)
+                        }.onSuccess {
+                            AndroidLog.i(TAG, "strip F41 icon: translate->search res=$searchRes (ImageView, appearance synced with modeTv)")
+                        }.onFailure {
+                            AndroidLog.e(TAG, "strip F41 icon: setImageResource failed: ${it.message} (keep translate icon)")
+                        }
+                        return
+                    }
+                    // 独立ImageView没找到，回退看modeTv左compoundDrawable。
+                    val left = runCatching { parts.modeTv.compoundDrawables?.getOrNull(0) }.getOrNull()
+                    if (left != null) {
+                        runCatching {
+                            parts.modeTv.setCompoundDrawablesWithIntrinsicBounds(searchRes, 0, 0, 0)
+                        }.onSuccess {
+                            AndroidLog.i(TAG, "strip F41 icon: translate->search res=$searchRes (compoundLeft)")
+                        }.onFailure {
+                            AndroidLog.e(TAG, "strip F41 icon: compound set failed: ${it.message} (keep translate icon)")
+                        }
+                        return
+                    }
+                    AndroidLog.e(TAG, "strip F41 icon: SKIP no mode icon view/compound (keep translate icon)")
+                } catch (t: Throwable) {
+                    AndroidLog.e(TAG, "strip F41 icon apply failed: $t (keep translate icon)")
+                }
+            }
+            if (Looper.myLooper() == Looper.getMainLooper()) doApply()
+            else parts.k.post { runCatching { doApply() } }
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "strip F41 icon dispatch failed: $t")
         }
     }
 
@@ -3223,6 +3428,7 @@ internal object WeTypeClipboardSearchUi {
             nativeKRefF41 = java.lang.ref.WeakReference(k)
             nativeKEditRefF41 = java.lang.ref.WeakReference(parts.edit)
             nativeKModeTvRefF41 = java.lang.ref.WeakReference(parts.modeTv)
+            nativeKModeIconRefF41 = parts.modeIcon?.let { java.lang.ref.WeakReference(it) }
             overlayParentRef = java.lang.ref.WeakReference(decor)
             searchManager = translatingMgr(k)
             // 圆角B：条圆角跟输入法背景走（WeTypeSettings.getCornerRadiusXposed，与WindowHooks同源）；
@@ -3265,6 +3471,8 @@ internal object WeTypeClipboardSearchUi {
             runCatching {
                 parts.modeTv.text = searchModeNameF41(searchModeF41)
             }
+            // 上行左图标：翻译图标换宿主搜索图标（只换drawable，不碰尺寸/tint/padding；失败只记日志不拦mount）。
+            runCatching { applySearchIconF41(parts) }
             // 下拉：经b#k喂搜索项 + d#setOnItemClick覆盖为搜索切换；失败fail-closed。
             if (!wireNativeDropdownF41(parts)) {
                 AndroidLog.e(TAG, "strip F41 reuse dropped: dropdown wire failed")
@@ -3281,6 +3489,7 @@ internal object WeTypeClipboardSearchUi {
             nativeKRefF41 = java.lang.ref.WeakReference(k)
             nativeKEditRefF41 = java.lang.ref.WeakReference(parts.edit)
             nativeKModeTvRefF41 = java.lang.ref.WeakReference(parts.modeTv)
+            nativeKModeIconRefF41 = parts.modeIcon?.let { java.lang.ref.WeakReference(it) }
             overlayParentRef = java.lang.ref.WeakReference(decor)
             overlayPending = false
             // 卡高：原生k.getCurrentHeight现量（充分利用扩充高度，不钳小窗；J3原生写窗，bar/键following原生）。
