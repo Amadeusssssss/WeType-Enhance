@@ -731,6 +731,15 @@ class MainHook : XposedModule() {
                     }
                     return@hookAfter
                 }
+                if (intent.getBooleanExtra(EXTRA_OPEN_WETYPE_LOGO_IMAGE_PAGE, false)) {
+                    intent.removeExtra(EXTRA_OPEN_WETYPE_LOGO_IMAGE_PAGE)
+                    activity.window?.decorView?.let { decorView ->
+                        HookEnvironment.postTracked(decorView) {
+                            WeTypeHostLauncher.showLogoImagePage(activity)
+                        }
+                    }
+                    return@hookAfter
+                }
                 if (!intent.getBooleanExtra(EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS, false)) return@hookAfter
                 intent.removeExtra(EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS)
                 activity.window?.decorView?.let { decorView ->

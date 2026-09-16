@@ -16,7 +16,13 @@ import com.xposed.wetypehook.wetype.settings.WeTypeSettings
 internal class WeTypeIconDrawable(
     @FloatRange(from = 0.0, to = 1.0)
     private val backgroundAlphaFraction: Float,
-    private val isDark: Boolean = backgroundAlphaFraction <= 0.5f
+    private val isDark: Boolean = backgroundAlphaFraction <= 0.5f,
+    /**
+     * 预览等非 hook 场景用的显式覆盖：非空时不再读 Xposed 快照，
+     * 使预览能实时反映尚未保存的编辑值。
+     */
+    private val accentOverride: Int? = null,
+    private val backgroundAlphaOverride: Int? = null
 ) : Drawable() {
     private val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
@@ -30,7 +36,7 @@ internal class WeTypeIconDrawable(
         val bounds = bounds
         if (bounds.isEmpty) return
 
-        val userOpacity = WeTypeSettings.getToolbarIconBgOpacityXposed()
+        val userOpacity = backgroundAlphaOverride ?: WeTypeSettings.getToolbarIconBgOpacityXposed()
         val bgAlpha = (userOpacity * backgroundAlphaFraction).toInt().coerceIn(0, 255)
 
         // Logo 主体（"微"字形）用选定色，白色圆底保持不变。
@@ -82,6 +88,7 @@ internal class WeTypeIconDrawable(
     }
 
     private fun resolveLogoAccentColor(): Int {
+        accentOverride?.let { return it }
         return when (WeTypeSettings.getLogoColorModeXposed()) {
             WeTypeSettings.LOGO_COLOR_MODE_SYSTEM,
             WeTypeSettings.LOGO_COLOR_MODE_BLACK,

@@ -14,6 +14,8 @@ object WeTypeHostActivityResultBridge {
 
     const val REQUEST_PICK_TREE = 0x7A11
     const val REQUEST_PICK_FILE = 0x7A12
+    const val REQUEST_PICK_LOGO_PNG = 0x7A13
+    const val REQUEST_PICK_LOGO_SVG = 0x7A14
 
     private val callbacks = ConcurrentHashMap<Int, (resultCode: Int, data: Intent?) -> Unit>()
 

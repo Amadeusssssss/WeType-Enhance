@@ -55,6 +55,7 @@ object WeTypeSettings {
     const val KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT = "remove_clipboard_retention_limit"
     const val KEY_REMOVE_CLIPBOARD_TEXT_LIMIT = "remove_clipboard_text_limit"
     const val KEY_CLIPBOARD_SEARCH = "clipboard_search_enabled"
+    const val KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK = "clipboard_search_clear_on_back"
     const val KEY_CLIPBOARD_IMAGE_ADJUST_RATIO = "clipboard_image_adjust_ratio"
     const val KEY_CLIPBOARD_IMAGE_CROP = "clipboard_image_crop"
     const val KEY_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT = "clipboard_image_uniform_row_height"
@@ -83,6 +84,7 @@ object WeTypeSettings {
     const val DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT = true
     const val DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT = true
     const val DEFAULT_CLIPBOARD_SEARCH_ENABLED = true
+    const val DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK = true
 
     // 剪贴板图片缩略图：默认保持原比例、完整显示、统一两行高度。
     // adjustRatio=false 时统一为正方形；crop=true 时在目标框内居中裁剪填满。
@@ -166,6 +168,33 @@ object WeTypeSettings {
     const val DEFAULT_LOGO_COLOR_MODE = LOGO_COLOR_MODE_BRAND
     const val DEFAULT_LOGO_CUSTOM_COLOR = 0xFF23C891.toInt()
 
+    // 自定义图片 Logo（二级页）：图片数据以内联字符串存偏好，走既有远端偏好/Bundle 桥同步，
+    // hook 侧与 UI 侧都只读本进程偏好，无跨进程文件读取。
+    // PNG 在导入时压缩到边长上限并转 Base64；SVG 存原始文本（上限内）。
+    const val KEY_LOGO_IMAGE_ENABLED = "logo_image_enabled"
+    const val KEY_LOGO_IMAGE_TYPE = "logo_image_type"
+    const val KEY_LOGO_SVG_RECOLOR_ENABLED = "logo_svg_recolor_enabled"
+    const val KEY_LOGO_IMAGE_PNG_BASE64 = "logo_image_png_base64"
+    const val KEY_LOGO_IMAGE_SVG_TEXT = "logo_image_svg_text"
+    const val KEY_LOGO_IMAGE_NAME = "logo_image_name"
+    const val KEY_LOGO_IMAGE_UPDATED_AT = "logo_image_updated_at"
+
+    const val LOGO_IMAGE_TYPE_PNG = "png"
+    const val LOGO_IMAGE_TYPE_SVG = "svg"
+
+    fun normalizeLogoImageType(type: String?): String = when (type) {
+        LOGO_IMAGE_TYPE_SVG -> LOGO_IMAGE_TYPE_SVG
+        else -> LOGO_IMAGE_TYPE_PNG
+    }
+
+    const val DEFAULT_LOGO_IMAGE_ENABLED = false
+    const val DEFAULT_LOGO_IMAGE_TYPE = LOGO_IMAGE_TYPE_PNG
+    const val DEFAULT_LOGO_SVG_RECOLOR_ENABLED = true
+    const val DEFAULT_LOGO_IMAGE_PNG_BASE64 = ""
+    const val DEFAULT_LOGO_IMAGE_SVG_TEXT = ""
+    const val DEFAULT_LOGO_IMAGE_NAME = ""
+    const val DEFAULT_LOGO_IMAGE_UPDATED_AT = 0L
+
     // 字体来源：键名/语义/默认值与 Z1/Z2 已发布包内逻辑保持一致，已安装端存量设置可直接兼容。
     // 0=微信官方（放行宿主字体），1=模块内置（assets/WE-Regular.ttf），2=跟随系统（Typeface.DEFAULT）。
     const val KEY_FONT_MODE = "font_mode"
@@ -245,6 +274,7 @@ object WeTypeSettings {
         val removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         val removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
         val clipboardSearchEnabled: Boolean = DEFAULT_CLIPBOARD_SEARCH_ENABLED,
+        val clipboardSearchClearOnBack: Boolean = DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
         val clipboardImageAdjustRatio: Boolean = DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO,
         val clipboardImageCrop: Boolean = DEFAULT_CLIPBOARD_IMAGE_CROP,
         val clipboardImageUniformRowHeight: Boolean = DEFAULT_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT,
@@ -269,6 +299,13 @@ object WeTypeSettings {
         val logoShowEnabled: Boolean = DEFAULT_LOGO_SHOW_ENABLED,
         val logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         val logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
+        val logoImageEnabled: Boolean = DEFAULT_LOGO_IMAGE_ENABLED,
+        val logoImageType: String = DEFAULT_LOGO_IMAGE_TYPE,
+        val logoSvgRecolorEnabled: Boolean = DEFAULT_LOGO_SVG_RECOLOR_ENABLED,
+        val logoImagePngBase64: String = DEFAULT_LOGO_IMAGE_PNG_BASE64,
+        val logoImageSvgText: String = DEFAULT_LOGO_IMAGE_SVG_TEXT,
+        val logoImageName: String = DEFAULT_LOGO_IMAGE_NAME,
+        val logoImageUpdatedAt: Long = DEFAULT_LOGO_IMAGE_UPDATED_AT,
         val fontMode: Int = DEFAULT_FONT_MODE,
         val hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
         val glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides()
@@ -278,6 +315,8 @@ object WeTypeSettings {
     fun isRemoveClipboardRetentionLimit(context: Context): Boolean = readSnapshot(context).removeClipboardRetentionLimit
     fun isRemoveClipboardTextLimit(context: Context): Boolean = readSnapshot(context).removeClipboardTextLimit
     fun isClipboardSearchEnabled(context: Context): Boolean = readSnapshot(context).clipboardSearchEnabled
+    fun isClipboardSearchClearOnBack(context: Context): Boolean =
+        readSnapshot(context).clipboardSearchClearOnBack
     fun isClipboardImageAdjustRatio(context: Context): Boolean = readSnapshot(context).clipboardImageAdjustRatio
     fun isClipboardImageCrop(context: Context): Boolean = readSnapshot(context).clipboardImageCrop
     fun isClipboardImageUniformRowHeight(context: Context): Boolean =
@@ -388,6 +427,8 @@ object WeTypeSettings {
     fun isRemoveClipboardRetentionLimitXposed(): Boolean = readSnapshotXposed().removeClipboardRetentionLimit
     fun isRemoveClipboardTextLimitXposed(): Boolean = readSnapshotXposed().removeClipboardTextLimit
     fun isClipboardSearchEnabledXposed(): Boolean = readSnapshotXposed().clipboardSearchEnabled
+    fun isClipboardSearchClearOnBackXposed(): Boolean =
+        readSnapshotXposed().clipboardSearchClearOnBack
     fun isClipboardImageAdjustRatioXposed(): Boolean = readSnapshotXposed().clipboardImageAdjustRatio
     fun isClipboardImageCropXposed(): Boolean = readSnapshotXposed().clipboardImageCrop
     fun isClipboardImageUniformRowHeightXposed(): Boolean =
@@ -417,11 +458,24 @@ object WeTypeSettings {
     fun isLogoShowEnabled(context: Context): Boolean = readSnapshot(context).logoShowEnabled
     fun getLogoColorMode(context: Context): String = readSnapshot(context).logoColorMode
     fun getLogoCustomColor(context: Context): Int = readSnapshot(context).logoCustomColor
+    fun isLogoImageEnabled(context: Context): Boolean = readSnapshot(context).logoImageEnabled
+    fun getLogoImageType(context: Context): String = readSnapshot(context).logoImageType
+    fun isLogoSvgRecolorEnabled(context: Context): Boolean = readSnapshot(context).logoSvgRecolorEnabled
+    fun getLogoImagePngBase64(context: Context): String = readSnapshot(context).logoImagePngBase64
+    fun getLogoImageSvgText(context: Context): String = readSnapshot(context).logoImageSvgText
+    fun getLogoImageName(context: Context): String = readSnapshot(context).logoImageName
+    fun getLogoImageUpdatedAt(context: Context): Long = readSnapshot(context).logoImageUpdatedAt
 
     fun isLogoEnabledXposed(): Boolean = readSnapshotXposed().logoEnabled
     fun isLogoShowEnabledXposed(): Boolean = readSnapshotXposed().logoShowEnabled
     fun getLogoColorModeXposed(): String = readSnapshotXposed().logoColorMode
     fun getLogoCustomColorXposed(): Int = readSnapshotXposed().logoCustomColor
+    fun isLogoImageEnabledXposed(): Boolean = readSnapshotXposed().logoImageEnabled
+    fun getLogoImageTypeXposed(): String = readSnapshotXposed().logoImageType
+    fun isLogoSvgRecolorEnabledXposed(): Boolean = readSnapshotXposed().logoSvgRecolorEnabled
+    fun getLogoImagePngBase64Xposed(): String = readSnapshotXposed().logoImagePngBase64
+    fun getLogoImageSvgTextXposed(): String = readSnapshotXposed().logoImageSvgText
+    fun getLogoImageUpdatedAtXposed(): Long = readSnapshotXposed().logoImageUpdatedAt
 
     fun getFontMode(context: Context): Int = readSnapshot(context).fontMode
 
@@ -629,6 +683,7 @@ object WeTypeSettings {
         removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
         clipboardSearchEnabled: Boolean = DEFAULT_CLIPBOARD_SEARCH_ENABLED,
+        clipboardSearchClearOnBack: Boolean = DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
         clipboardImageAdjustRatio: Boolean = DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO,
         clipboardImageCrop: Boolean = DEFAULT_CLIPBOARD_IMAGE_CROP,
         clipboardImageUniformRowHeight: Boolean = DEFAULT_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT,
@@ -653,6 +708,13 @@ object WeTypeSettings {
         logoShowEnabled: Boolean = DEFAULT_LOGO_SHOW_ENABLED,
         logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
+        logoImageEnabled: Boolean = DEFAULT_LOGO_IMAGE_ENABLED,
+        logoImageType: String = DEFAULT_LOGO_IMAGE_TYPE,
+        logoSvgRecolorEnabled: Boolean = DEFAULT_LOGO_SVG_RECOLOR_ENABLED,
+        logoImagePngBase64: String = DEFAULT_LOGO_IMAGE_PNG_BASE64,
+        logoImageSvgText: String = DEFAULT_LOGO_IMAGE_SVG_TEXT,
+        logoImageName: String = DEFAULT_LOGO_IMAGE_NAME,
+        logoImageUpdatedAt: Long = DEFAULT_LOGO_IMAGE_UPDATED_AT,
         fontMode: Int = DEFAULT_FONT_MODE,
         hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
         glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
@@ -681,6 +743,7 @@ object WeTypeSettings {
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
             clipboardSearchEnabled = clipboardSearchEnabled,
+            clipboardSearchClearOnBack = clipboardSearchClearOnBack,
             clipboardImageAdjustRatio = clipboardImageAdjustRatio,
             clipboardImageCrop = clipboardImageCrop,
             clipboardImageUniformRowHeight = clipboardImageUniformRowHeight,
@@ -708,9 +771,92 @@ object WeTypeSettings {
             logoShowEnabled = logoShowEnabled,
             logoColorMode = logoColorMode,
             logoCustomColor = logoCustomColor,
+            logoImageEnabled = logoImageEnabled,
+            logoImageType = logoImageType,
+            logoSvgRecolorEnabled = logoSvgRecolorEnabled,
+            logoImagePngBase64 = logoImagePngBase64,
+            logoImageSvgText = logoImageSvgText,
+            logoImageName = logoImageName,
+            logoImageUpdatedAt = logoImageUpdatedAt,
             fontMode = fontMode,
             hyperMaterialEnabled = hyperMaterialEnabled,
             glassOverrides = glassOverrides,
+            onPersisted = onPersisted
+        )
+    }
+
+    /**
+     * 二级图片 Logo 页的定点更新入口：读当前快照后只覆盖图片相关字段，
+     * 其余设置原样回写，避免整页保存误删无关配置。
+     * pngBase64/svgText 传 null 表示保持，传 "" 表示清空对应图片。
+     */
+    fun saveLogoImage(
+        context: Context,
+        enabled: Boolean? = null,
+        imageType: String? = null,
+        svgRecolorEnabled: Boolean? = null,
+        pngBase64: String? = null,
+        svgText: String? = null,
+        imageName: String? = null,
+        updatedAt: Long? = null,
+        onPersisted: (Boolean) -> Unit = {}
+    ): Boolean {
+        val current = readLocalSnapshot(context)
+        return save(
+            context = context,
+            lightColor = current.lightColor,
+            darkColor = current.darkColor,
+            blurRadius = current.blurRadius,
+            cornerRadius = current.cornerRadius,
+            keyCornerRadius = current.keyCornerRadius,
+            edgeHighlightEnabled = current.edgeHighlightEnabled,
+            edgeHighlightIntensity = current.edgeHighlightIntensity,
+            candidateBackgroundAlpha = current.candidateBackgroundAlpha,
+            candidateBackgroundCorner = current.candidateBackgroundCorner,
+            candidateBackgroundLeftMarginDp = current.candidateBackgroundLeftMarginDp,
+            candidatePinyinLeftMarginDp = current.candidatePinyinLeftMarginDp,
+            toolbarIconBgOpacity = current.toolbarIconBgOpacity,
+            appearanceColors = current.appearanceColors,
+            disableHotUpdate = current.disableHotUpdate,
+            showCrossDeviceClipboard = current.showCrossDeviceClipboard,
+            removeClipboardRetentionLimit = current.removeClipboardRetentionLimit,
+            removeClipboardTextLimit = current.removeClipboardTextLimit,
+            clipboardSearchEnabled = current.clipboardSearchEnabled,
+            clipboardSearchClearOnBack = current.clipboardSearchClearOnBack,
+            clipboardImageAdjustRatio = current.clipboardImageAdjustRatio,
+            clipboardImageCrop = current.clipboardImageCrop,
+            clipboardImageUniformRowHeight = current.clipboardImageUniformRowHeight,
+            clipboardImageMaxCount = current.clipboardImageMaxCount,
+            clipboardImageMaxSizeMb = current.clipboardImageMaxSizeMb,
+            qwertyGestureEnabled = current.qwertyGestureEnabled,
+            t9GestureEnabled = current.t9GestureEnabled,
+            gestureThreshold = current.gestureThreshold,
+            t9GestureThreshold = current.t9GestureThreshold,
+            gestureVibration = current.gestureVibration,
+            t9GestureVibration = current.t9GestureVibration,
+            gestureBindingsJson = current.gestureBindingsJson,
+            showGestureKeyLabels = current.showGestureKeyLabels,
+            gestureLabelTextSizeSp = current.gestureLabelTextSizeSp,
+            gestureLabelAlpha = current.gestureLabelAlpha,
+            gestureLabelPosition = current.gestureLabelPosition,
+            gestureLabelMarginTopDp = current.gestureLabelMarginTopDp,
+            gestureLabelMarginBottomDp = current.gestureLabelMarginBottomDp,
+            gestureLabelMarginLeftDp = current.gestureLabelMarginLeftDp,
+            gestureLabelMarginRightDp = current.gestureLabelMarginRightDp,
+            logoEnabled = current.logoEnabled,
+            logoShowEnabled = current.logoShowEnabled,
+            logoColorMode = current.logoColorMode,
+            logoCustomColor = current.logoCustomColor,
+            logoImageEnabled = enabled ?: current.logoImageEnabled,
+            logoImageType = normalizeLogoImageType(imageType ?: current.logoImageType),
+            logoSvgRecolorEnabled = svgRecolorEnabled ?: current.logoSvgRecolorEnabled,
+            logoImagePngBase64 = pngBase64 ?: current.logoImagePngBase64,
+            logoImageSvgText = svgText ?: current.logoImageSvgText,
+            logoImageName = imageName ?: current.logoImageName,
+            logoImageUpdatedAt = updatedAt ?: current.logoImageUpdatedAt,
+            fontMode = current.fontMode,
+            hyperMaterialEnabled = current.hyperMaterialEnabled,
+            glassOverrides = current.glassOverrides,
             onPersisted = onPersisted
         )
     }
@@ -774,6 +920,15 @@ object WeTypeSettings {
             ?: defaultSnapshot()
     }
 
+    /**
+     * 只读本进程偏好：宿主内对话框与二级页同进程并发写时，本地永远最新，
+     * 用它做定点更新的基线，避免读到桥接尚未送达的远端旧值后回写覆盖。
+     */
+    fun readLocalSnapshot(context: Context): Snapshot {
+        return appPreferences(context).toSnapshotOrNull()
+            ?: readSnapshot(context)
+    }
+
     internal fun readSnapshotXposed(): Snapshot {
         cachedXposedSnapshot?.let { return it }
 
@@ -817,6 +972,38 @@ object WeTypeSettings {
         return appContext.getSharedPreferences(PREF_GROUP, Context.MODE_PRIVATE)
     }
 
+    /**
+     * 监听本进程偏好变更：主设置页用它刷新二级页改动带来的摘要，
+     * 只更新摘要状态，不覆盖编辑中的值。
+     *
+     * @return 注销函数。
+     */
+    fun observeLocalChanges(
+        context: Context,
+        listener: SharedPreferences.OnSharedPreferenceChangeListener
+    ): () -> Unit {
+        val preferences = appPreferences(context.applicationContext ?: context)
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        return {
+            runCatching { preferences.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
+    }
+
+    /** 二级图片 Logo 页入口摘要：关闭/未上传/已上传类型。 */
+    fun logoImageSummary(snapshot: Snapshot): String {
+        if (!snapshot.logoImageEnabled) return "已关闭，用回矢量 Logo"
+        val hasPng = snapshot.logoImagePngBase64.isNotEmpty()
+        val hasSvg = snapshot.logoImageSvgText.isNotEmpty()
+        if (!hasPng && !hasSvg) return "已开启，尚未上传图片"
+        val current = when (WeTypeSettings.normalizeLogoImageType(snapshot.logoImageType)) {
+            LOGO_IMAGE_TYPE_SVG -> if (hasSvg) "SVG" else "PNG"
+            else -> if (hasPng) "PNG" else "SVG"
+        }
+        val name = snapshot.logoImageName.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
+        val recolor = if (current == "SVG" && snapshot.logoSvgRecolorEnabled) " · 跟随主体色" else ""
+        return "生效中：$current$name$recolor"
+    }
+
     private fun saveDirect(
         context: Context,
         lightColor: Int,
@@ -837,6 +1024,7 @@ object WeTypeSettings {
         removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
         clipboardSearchEnabled: Boolean = DEFAULT_CLIPBOARD_SEARCH_ENABLED,
+        clipboardSearchClearOnBack: Boolean = DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
         clipboardImageAdjustRatio: Boolean = DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO,
         clipboardImageCrop: Boolean = DEFAULT_CLIPBOARD_IMAGE_CROP,
         clipboardImageUniformRowHeight: Boolean = DEFAULT_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT,
@@ -861,6 +1049,13 @@ object WeTypeSettings {
         logoShowEnabled: Boolean = DEFAULT_LOGO_SHOW_ENABLED,
         logoColorMode: String = DEFAULT_LOGO_COLOR_MODE,
         logoCustomColor: Int = DEFAULT_LOGO_CUSTOM_COLOR,
+        logoImageEnabled: Boolean = DEFAULT_LOGO_IMAGE_ENABLED,
+        logoImageType: String = DEFAULT_LOGO_IMAGE_TYPE,
+        logoSvgRecolorEnabled: Boolean = DEFAULT_LOGO_SVG_RECOLOR_ENABLED,
+        logoImagePngBase64: String = DEFAULT_LOGO_IMAGE_PNG_BASE64,
+        logoImageSvgText: String = DEFAULT_LOGO_IMAGE_SVG_TEXT,
+        logoImageName: String = DEFAULT_LOGO_IMAGE_NAME,
+        logoImageUpdatedAt: Long = DEFAULT_LOGO_IMAGE_UPDATED_AT,
         fontMode: Int = DEFAULT_FONT_MODE,
         hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
         glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
@@ -890,6 +1085,7 @@ object WeTypeSettings {
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
             clipboardSearchEnabled = clipboardSearchEnabled,
+            clipboardSearchClearOnBack = clipboardSearchClearOnBack,
             clipboardImageAdjustRatio = clipboardImageAdjustRatio,
             clipboardImageCrop = clipboardImageCrop,
             clipboardImageUniformRowHeight = clipboardImageUniformRowHeight,
@@ -917,6 +1113,13 @@ object WeTypeSettings {
             logoShowEnabled = logoShowEnabled,
             logoColorMode = normalizeLogoColorMode(logoColorMode),
             logoCustomColor = logoCustomColor,
+            logoImageEnabled = logoImageEnabled,
+            logoImageType = normalizeLogoImageType(logoImageType),
+            logoSvgRecolorEnabled = logoSvgRecolorEnabled,
+            logoImagePngBase64 = logoImagePngBase64,
+            logoImageSvgText = logoImageSvgText,
+            logoImageName = logoImageName.take(128),
+            logoImageUpdatedAt = logoImageUpdatedAt.coerceAtLeast(0L),
             fontMode = fontMode.coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
             hyperMaterialEnabled = hyperMaterialEnabled,
             glassOverrides = glassOverrides
@@ -985,6 +1188,7 @@ object WeTypeSettings {
             .putBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, snapshot.removeClipboardRetentionLimit)
             .putBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, snapshot.removeClipboardTextLimit)
             .putBoolean(KEY_CLIPBOARD_SEARCH, snapshot.clipboardSearchEnabled)
+            .putBoolean(KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK, snapshot.clipboardSearchClearOnBack)
             .putBoolean(KEY_CLIPBOARD_IMAGE_ADJUST_RATIO, snapshot.clipboardImageAdjustRatio)
             .putBoolean(KEY_CLIPBOARD_IMAGE_CROP, snapshot.clipboardImageCrop)
             .putBoolean(KEY_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT, snapshot.clipboardImageUniformRowHeight)
@@ -1009,6 +1213,13 @@ object WeTypeSettings {
             .putBoolean(KEY_LOGO_SHOW_ENABLED, snapshot.logoShowEnabled)
             .putString(KEY_LOGO_COLOR_MODE, snapshot.logoColorMode)
             .putInt(KEY_LOGO_CUSTOM_COLOR, snapshot.logoCustomColor)
+            .putBoolean(KEY_LOGO_IMAGE_ENABLED, snapshot.logoImageEnabled)
+            .putString(KEY_LOGO_IMAGE_TYPE, snapshot.logoImageType)
+            .putBoolean(KEY_LOGO_SVG_RECOLOR_ENABLED, snapshot.logoSvgRecolorEnabled)
+            .putString(KEY_LOGO_IMAGE_PNG_BASE64, snapshot.logoImagePngBase64)
+            .putString(KEY_LOGO_IMAGE_SVG_TEXT, snapshot.logoImageSvgText)
+            .putString(KEY_LOGO_IMAGE_NAME, snapshot.logoImageName)
+            .putLong(KEY_LOGO_IMAGE_UPDATED_AT, snapshot.logoImageUpdatedAt)
             .putInt(KEY_FONT_MODE, snapshot.fontMode)
             .putBoolean(KEY_KEY_OPACITY_MIGRATED, true)
             .remove(KEY_KEY_OPACITY)
@@ -1158,6 +1369,7 @@ object WeTypeSettings {
         putBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, removeClipboardRetentionLimit)
         putBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, removeClipboardTextLimit)
         putBoolean(KEY_CLIPBOARD_SEARCH, clipboardSearchEnabled)
+        putBoolean(KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK, clipboardSearchClearOnBack)
         putBoolean(KEY_CLIPBOARD_IMAGE_ADJUST_RATIO, clipboardImageAdjustRatio)
         putBoolean(KEY_CLIPBOARD_IMAGE_CROP, clipboardImageCrop)
         putBoolean(KEY_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT, clipboardImageUniformRowHeight)
@@ -1182,6 +1394,13 @@ object WeTypeSettings {
         putBoolean(KEY_LOGO_SHOW_ENABLED, logoShowEnabled)
         putString(KEY_LOGO_COLOR_MODE, logoColorMode)
         putInt(KEY_LOGO_CUSTOM_COLOR, logoCustomColor)
+        putBoolean(KEY_LOGO_IMAGE_ENABLED, logoImageEnabled)
+        putString(KEY_LOGO_IMAGE_TYPE, logoImageType)
+        putBoolean(KEY_LOGO_SVG_RECOLOR_ENABLED, logoSvgRecolorEnabled)
+        putString(KEY_LOGO_IMAGE_PNG_BASE64, logoImagePngBase64)
+        putString(KEY_LOGO_IMAGE_SVG_TEXT, logoImageSvgText)
+        putString(KEY_LOGO_IMAGE_NAME, logoImageName)
+        putLong(KEY_LOGO_IMAGE_UPDATED_AT, logoImageUpdatedAt)
         putInt(KEY_FONT_MODE, fontMode)
         putBoolean(KEY_HYPER_MATERIAL_ENABLED, hyperMaterialEnabled)
         glassOverrides.glass?.let { putFloatArray(KEY_GLASS_PARAMS, it.toFloatArray()) }
@@ -1259,6 +1478,10 @@ object WeTypeSettings {
             removeClipboardRetentionLimit = getBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, defaults.removeClipboardRetentionLimit),
             removeClipboardTextLimit = getBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, defaults.removeClipboardTextLimit),
             clipboardSearchEnabled = getBoolean(KEY_CLIPBOARD_SEARCH, defaults.clipboardSearchEnabled),
+            clipboardSearchClearOnBack = getBoolean(
+                KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
+                defaults.clipboardSearchClearOnBack
+            ),
             clipboardImageAdjustRatio = getBoolean(
                 KEY_CLIPBOARD_IMAGE_ADJUST_RATIO,
                 defaults.clipboardImageAdjustRatio
@@ -1303,6 +1526,13 @@ object WeTypeSettings {
             logoShowEnabled = getBoolean(KEY_LOGO_SHOW_ENABLED, defaults.logoShowEnabled),
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE) ?: defaults.logoColorMode),
             logoCustomColor = getInt(KEY_LOGO_CUSTOM_COLOR, defaults.logoCustomColor),
+            logoImageEnabled = getBoolean(KEY_LOGO_IMAGE_ENABLED, defaults.logoImageEnabled),
+            logoImageType = normalizeLogoImageType(getString(KEY_LOGO_IMAGE_TYPE) ?: defaults.logoImageType),
+            logoSvgRecolorEnabled = getBoolean(KEY_LOGO_SVG_RECOLOR_ENABLED, defaults.logoSvgRecolorEnabled),
+            logoImagePngBase64 = getString(KEY_LOGO_IMAGE_PNG_BASE64) ?: defaults.logoImagePngBase64,
+            logoImageSvgText = getString(KEY_LOGO_IMAGE_SVG_TEXT) ?: defaults.logoImageSvgText,
+            logoImageName = getString(KEY_LOGO_IMAGE_NAME) ?: defaults.logoImageName,
+            logoImageUpdatedAt = getLong(KEY_LOGO_IMAGE_UPDATED_AT, defaults.logoImageUpdatedAt).coerceAtLeast(0L),
             fontMode = getInt(KEY_FONT_MODE, defaults.fontMode)
                 .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
             hyperMaterialEnabled = getBoolean(KEY_HYPER_MATERIAL_ENABLED, defaults.hyperMaterialEnabled),
@@ -1378,6 +1608,10 @@ object WeTypeSettings {
             removeClipboardRetentionLimit = getBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT),
             removeClipboardTextLimit = getBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT),
             clipboardSearchEnabled = getBoolean(KEY_CLIPBOARD_SEARCH, DEFAULT_CLIPBOARD_SEARCH_ENABLED),
+            clipboardSearchClearOnBack = getBoolean(
+                KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
+                DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK
+            ),
             clipboardImageAdjustRatio = getBoolean(
                 KEY_CLIPBOARD_IMAGE_ADJUST_RATIO,
                 DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO
@@ -1419,6 +1653,17 @@ object WeTypeSettings {
             logoShowEnabled = getBoolean(KEY_LOGO_SHOW_ENABLED, DEFAULT_LOGO_SHOW_ENABLED),
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE, DEFAULT_LOGO_COLOR_MODE)),
             logoCustomColor = getInt(KEY_LOGO_CUSTOM_COLOR, DEFAULT_LOGO_CUSTOM_COLOR),
+            logoImageEnabled = getBoolean(KEY_LOGO_IMAGE_ENABLED, DEFAULT_LOGO_IMAGE_ENABLED),
+            logoImageType = normalizeLogoImageType(getString(KEY_LOGO_IMAGE_TYPE, DEFAULT_LOGO_IMAGE_TYPE)),
+            logoSvgRecolorEnabled = getBoolean(KEY_LOGO_SVG_RECOLOR_ENABLED, DEFAULT_LOGO_SVG_RECOLOR_ENABLED),
+            logoImagePngBase64 = getString(KEY_LOGO_IMAGE_PNG_BASE64, DEFAULT_LOGO_IMAGE_PNG_BASE64)
+                ?: DEFAULT_LOGO_IMAGE_PNG_BASE64,
+            logoImageSvgText = getString(KEY_LOGO_IMAGE_SVG_TEXT, DEFAULT_LOGO_IMAGE_SVG_TEXT)
+                ?: DEFAULT_LOGO_IMAGE_SVG_TEXT,
+            logoImageName = getString(KEY_LOGO_IMAGE_NAME, DEFAULT_LOGO_IMAGE_NAME)
+                ?: DEFAULT_LOGO_IMAGE_NAME,
+            logoImageUpdatedAt = getLong(KEY_LOGO_IMAGE_UPDATED_AT, DEFAULT_LOGO_IMAGE_UPDATED_AT)
+                .coerceAtLeast(0L),
             fontMode = getInt(KEY_FONT_MODE, DEFAULT_FONT_MODE)
                 .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
             hyperMaterialEnabled = getBoolean(KEY_HYPER_MATERIAL_ENABLED, DEFAULT_HYPER_MATERIAL_ENABLED),
@@ -1465,6 +1710,7 @@ object WeTypeSettings {
         removeClipboardRetentionLimit = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
         clipboardSearchEnabled = DEFAULT_CLIPBOARD_SEARCH_ENABLED,
+        clipboardSearchClearOnBack = DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK,
         clipboardImageAdjustRatio = DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO,
         clipboardImageCrop = DEFAULT_CLIPBOARD_IMAGE_CROP,
         clipboardImageUniformRowHeight = DEFAULT_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT,
@@ -1489,6 +1735,13 @@ object WeTypeSettings {
         logoShowEnabled = DEFAULT_LOGO_SHOW_ENABLED,
         logoColorMode = DEFAULT_LOGO_COLOR_MODE,
         logoCustomColor = DEFAULT_LOGO_CUSTOM_COLOR,
+        logoImageEnabled = DEFAULT_LOGO_IMAGE_ENABLED,
+        logoImageType = DEFAULT_LOGO_IMAGE_TYPE,
+        logoSvgRecolorEnabled = DEFAULT_LOGO_SVG_RECOLOR_ENABLED,
+        logoImagePngBase64 = DEFAULT_LOGO_IMAGE_PNG_BASE64,
+        logoImageSvgText = DEFAULT_LOGO_IMAGE_SVG_TEXT,
+        logoImageName = DEFAULT_LOGO_IMAGE_NAME,
+        logoImageUpdatedAt = DEFAULT_LOGO_IMAGE_UPDATED_AT,
         fontMode = DEFAULT_FONT_MODE
     )
 
@@ -1511,6 +1764,7 @@ object WeTypeSettings {
             contains(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT) ||
             contains(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT) ||
             contains(KEY_CLIPBOARD_SEARCH) ||
+            contains(KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK) ||
             contains(KEY_CLIPBOARD_IMAGE_MAX_COUNT) ||
             contains(KEY_CLIPBOARD_IMAGE_MAX_SIZE_MB) ||
             contains(KEY_QWERTY_GESTURE_ENABLED) ||
@@ -1532,6 +1786,13 @@ object WeTypeSettings {
             contains(KEY_LOGO_SHOW_ENABLED) ||
             contains(KEY_LOGO_COLOR_MODE) ||
             contains(KEY_LOGO_CUSTOM_COLOR) ||
+            contains(KEY_LOGO_IMAGE_ENABLED) ||
+            contains(KEY_LOGO_IMAGE_TYPE) ||
+            contains(KEY_LOGO_SVG_RECOLOR_ENABLED) ||
+            contains(KEY_LOGO_IMAGE_PNG_BASE64) ||
+            contains(KEY_LOGO_IMAGE_SVG_TEXT) ||
+            contains(KEY_LOGO_IMAGE_NAME) ||
+            contains(KEY_LOGO_IMAGE_UPDATED_AT) ||
             contains(KEY_FONT_MODE) ||
             contains(KEY_HYPER_MATERIAL_ENABLED) ||
             contains("${KEY_GLASS_PARAMS}_count") ||

@@ -155,6 +155,7 @@ import kotlin.math.roundToInt
 
 const val EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS = "com.xposed.wetypehook.extra.OPEN_WETYPE_EMBEDDED_SETTINGS"
 const val EXTRA_OPEN_WETYPE_BACKUP_PAGE = "com.xposed.wetypehook.extra.OPEN_WETYPE_BACKUP_PAGE"
+const val EXTRA_OPEN_WETYPE_LOGO_IMAGE_PAGE = "com.xposed.wetypehook.extra.OPEN_WETYPE_LOGO_IMAGE_PAGE"
 private const val ACTIVATION_HEARTBEAT_WINDOW_MS = 4_000L
 private const val ACTIVATION_KEYBOARD_RETRY_COUNT = 3
 private const val ACTIVATION_KEYBOARD_RETRY_DELAY_MS = 450L
@@ -522,6 +523,9 @@ private fun WeTypeSettingsScreen(
     var clipboardSearchEnabled by rememberSaveable {
         mutableStateOf(snapshot.clipboardSearchEnabled)
     }
+    var clipboardSearchClearOnBack by rememberSaveable {
+        mutableStateOf(snapshot.clipboardSearchClearOnBack)
+    }
     var clipboardImageAdjustRatio by rememberSaveable {
         mutableStateOf(snapshot.clipboardImageAdjustRatio)
     }
@@ -593,6 +597,39 @@ private fun WeTypeSettingsScreen(
     }
     var logoCustomColorInput by rememberSaveable {
         mutableStateOf(formatRgb(snapshot.logoCustomColor))
+    }
+    // 自定义图片 Logo 由二级页编辑；主页面只透传保存，用普通 remember 避免大字符串进 savedState。
+    var logoImageEnabled by rememberSaveable { mutableStateOf(snapshot.logoImageEnabled) }
+    var logoImageType by rememberSaveable {
+        mutableStateOf(WeTypeSettings.normalizeLogoImageType(snapshot.logoImageType))
+    }
+    var logoSvgRecolorEnabled by rememberSaveable { mutableStateOf(snapshot.logoSvgRecolorEnabled) }
+    var logoImagePngBase64 by remember { mutableStateOf(snapshot.logoImagePngBase64) }
+    var logoImageSvgText by remember { mutableStateOf(snapshot.logoImageSvgText) }
+    var logoImageName by rememberSaveable { mutableStateOf(snapshot.logoImageName) }
+    var logoImageUpdatedAt by rememberSaveable { mutableStateOf(snapshot.logoImageUpdatedAt) }
+    var logoImageSummary by rememberSaveable {
+        mutableStateOf(WeTypeSettings.logoImageSummary(snapshot))
+    }
+    DisposableEffect(preferencesContext) {
+        fun refreshFromLocal() {
+            val fresh = WeTypeSettings.readLocalSnapshot(preferencesContext)
+            logoImageEnabled = fresh.logoImageEnabled
+            logoImageType = WeTypeSettings.normalizeLogoImageType(fresh.logoImageType)
+            logoSvgRecolorEnabled = fresh.logoSvgRecolorEnabled
+            logoImagePngBase64 = fresh.logoImagePngBase64
+            logoImageSvgText = fresh.logoImageSvgText
+            logoImageName = fresh.logoImageName
+            logoImageUpdatedAt = fresh.logoImageUpdatedAt
+            logoImageSummary = WeTypeSettings.logoImageSummary(fresh)
+        }
+        // 二级页在同一进程直接写本地偏好，回来时刷新摘要与透传值（主页面不编辑这些字段）。
+        refreshFromLocal()
+        val stopObserving = WeTypeSettings.observeLocalChanges(
+            preferencesContext,
+            SharedPreferences.OnSharedPreferenceChangeListener { _, _ -> refreshFromLocal() }
+        )
+        onDispose { stopObserving() }
     }
     var fontMode by rememberSaveable {
         mutableIntStateOf(snapshot.fontMode)
@@ -711,6 +748,7 @@ private fun WeTypeSettingsScreen(
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
             clipboardSearchEnabled = clipboardSearchEnabled,
+            clipboardSearchClearOnBack = clipboardSearchClearOnBack,
             clipboardImageAdjustRatio = clipboardImageAdjustRatio,
             clipboardImageCrop = clipboardImageCrop,
             clipboardImageUniformRowHeight = clipboardImageUniformRowHeight,
@@ -735,6 +773,13 @@ private fun WeTypeSettingsScreen(
             logoShowEnabled = logoShowEnabled,
             logoColorMode = logoColorMode,
             logoCustomColor = parseLogoCustomColor(logoCustomColorInput),
+            logoImageEnabled = logoImageEnabled,
+            logoImageType = logoImageType,
+            logoSvgRecolorEnabled = logoSvgRecolorEnabled,
+            logoImagePngBase64 = logoImagePngBase64,
+            logoImageSvgText = logoImageSvgText,
+            logoImageName = logoImageName,
+            logoImageUpdatedAt = logoImageUpdatedAt,
             fontMode = fontMode,
             hyperMaterialEnabled = hyperMaterialEnabled,
             glassOverrides = glassOverridesToSave,
@@ -767,6 +812,7 @@ private fun WeTypeSettingsScreen(
         removeClipboardRetentionLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT
         removeClipboardTextLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT
         clipboardSearchEnabled = WeTypeSettings.DEFAULT_CLIPBOARD_SEARCH_ENABLED
+        clipboardSearchClearOnBack = WeTypeSettings.DEFAULT_CLIPBOARD_SEARCH_CLEAR_ON_BACK
         clipboardImageAdjustRatio = WeTypeSettings.DEFAULT_CLIPBOARD_IMAGE_ADJUST_RATIO
         clipboardImageCrop = WeTypeSettings.DEFAULT_CLIPBOARD_IMAGE_CROP
         clipboardImageUniformRowHeight = WeTypeSettings.DEFAULT_CLIPBOARD_IMAGE_UNIFORM_ROW_HEIGHT
@@ -791,6 +837,10 @@ private fun WeTypeSettingsScreen(
         logoShowEnabled = WeTypeSettings.DEFAULT_LOGO_SHOW_ENABLED
         logoColorMode = WeTypeSettings.DEFAULT_LOGO_COLOR_MODE
         logoCustomColorInput = formatRgb(WeTypeSettings.DEFAULT_LOGO_CUSTOM_COLOR)
+        // 全局重置时图片开关回到关闭（用回矢量 Logo），已上传文件保留，可在二级页清除。
+        logoImageEnabled = WeTypeSettings.DEFAULT_LOGO_IMAGE_ENABLED
+        logoImageType = WeTypeSettings.DEFAULT_LOGO_IMAGE_TYPE
+        logoSvgRecolorEnabled = WeTypeSettings.DEFAULT_LOGO_SVG_RECOLOR_ENABLED
         fontMode = WeTypeSettings.DEFAULT_FONT_MODE
         glassInput.indices.forEach { glassInput[it] = "" }
         previewGlassOverrides = GlassMaterialOverrides()
@@ -1009,11 +1059,18 @@ private fun WeTypeSettingsScreen(
                         onLogoColorModeChange = { logoColorMode = it },
                         logoCustomColorInput = logoCustomColorInput,
                         onLogoCustomColorInputChange = { logoCustomColorInput = it },
+                        logoImageSummary = logoImageSummary,
+                        onOpenLogoImage = {
+                            WeTypeHostLauncher.launchLogoImagePage(settingsContext as? Activity)
+                        },
                         onResetLogo = {
                             logoEnabled = WeTypeSettings.DEFAULT_LOGO_ENABLED
                             logoShowEnabled = WeTypeSettings.DEFAULT_LOGO_SHOW_ENABLED
                             logoColorMode = WeTypeSettings.DEFAULT_LOGO_COLOR_MODE
                             logoCustomColorInput = formatRgb(WeTypeSettings.DEFAULT_LOGO_CUSTOM_COLOR)
+                            logoImageEnabled = WeTypeSettings.DEFAULT_LOGO_IMAGE_ENABLED
+                            logoImageType = WeTypeSettings.DEFAULT_LOGO_IMAGE_TYPE
+                            logoSvgRecolorEnabled = WeTypeSettings.DEFAULT_LOGO_SVG_RECOLOR_ENABLED
                         },
                         fontMode = fontMode,
                         onFontModeChange = { fontMode = it },
@@ -1028,6 +1085,8 @@ private fun WeTypeSettingsScreen(
                         onRemoveClipboardTextLimitChange = { removeClipboardTextLimit = it },
                         clipboardSearchEnabled = clipboardSearchEnabled,
                         onClipboardSearchEnabledChange = { clipboardSearchEnabled = it },
+                        clipboardSearchClearOnBack = clipboardSearchClearOnBack,
+                        onClipboardSearchClearOnBackChange = { clipboardSearchClearOnBack = it },
                         clipboardImageAdjustRatio = clipboardImageAdjustRatio,
                         onClipboardImageAdjustRatioChange = { clipboardImageAdjustRatio = it },
                         clipboardImageCrop = clipboardImageCrop,
@@ -2927,6 +2986,8 @@ private fun LazyListScope.FeatureTabContent(
     onLogoColorModeChange: (String) -> Unit,
     logoCustomColorInput: String,
     onLogoCustomColorInputChange: (String) -> Unit,
+    logoImageSummary: String,
+    onOpenLogoImage: () -> Unit,
     onResetLogo: () -> Unit,
     fontMode: Int,
     onFontModeChange: (Int) -> Unit,
@@ -2939,6 +3000,8 @@ private fun LazyListScope.FeatureTabContent(
     onRemoveClipboardTextLimitChange: (Boolean) -> Unit,
     clipboardSearchEnabled: Boolean,
     onClipboardSearchEnabledChange: (Boolean) -> Unit,
+    clipboardSearchClearOnBack: Boolean,
+    onClipboardSearchClearOnBackChange: (Boolean) -> Unit,
     clipboardImageAdjustRatio: Boolean,
     onClipboardImageAdjustRatioChange: (Boolean) -> Unit,
     clipboardImageCrop: Boolean,
@@ -3026,6 +3089,11 @@ private fun LazyListScope.FeatureTabContent(
                         )
                     }
                 }
+                BasicComponent(
+                    title = "自定义图片 Logo",
+                    summary = logoImageSummary,
+                    onClick = onOpenLogoImage
+                )
                 ArrowPreference(
                     title = "重置 Logo 设置",
                     summary = "恢复 Logo 默认开启、品牌色状态",
@@ -3107,6 +3175,12 @@ private fun LazyListScope.FeatureTabContent(
                     description = "在剪贴板页面显示搜索框，按文本拼音分词过滤",
                     checked = clipboardSearchEnabled,
                     onCheckedChange = onClipboardSearchEnabledChange
+                )
+                MiuixSwitchWidget(
+                    title = "返回时清理搜索关键词",
+                    description = "在剪贴板页面点击返回键时清理搜索关键词，恢复完整列表；关闭则保留上次搜索结果",
+                    checked = clipboardSearchClearOnBack,
+                    onCheckedChange = onClipboardSearchClearOnBackChange
                 )
                 MiuixSwitchWidget(
                     title = "图片缩略图保持原比例",

@@ -3,8 +3,10 @@ package com.xposed.wetypehook.wetype.hook
 import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.content.res.TypedArray
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Rect
@@ -23,6 +25,7 @@ import com.xposed.wetypehook.xposed.hookAfter
 import com.xposed.wetypehook.xposed.hookBefore
 import com.xposed.wetypehook.xposed.hookReturnConstant
 import com.xposed.wetypehook.xposed.loadClassOrNull
+import com.xposed.wetypehook.wetype.logo.LogoImageRenderer
 import com.xposed.wetypehook.wetype.settings.WeTypeAppearanceColorGroup
 import com.xposed.wetypehook.wetype.settings.WeTypeAppearanceColorMode
 import com.xposed.wetypehook.wetype.settings.WeTypeAppearanceColorGroups
@@ -93,6 +96,10 @@ internal object WeTypeResourceHooks {
         WeakHashMap<ImageView, LogoHostState>()
     )
     private val restoringLogoDrawable = ThreadLocal.withInitial { false }
+    private data class CustomLogoCacheKey(val updatedAt: Long, val type: String)
+    private val customLogoCacheLock = Any()
+    private var customLogoCacheKey: CustomLogoCacheKey? = null
+    private var customLogoCacheBitmap: Bitmap? = null
     private val candidateItemRootBaseLeftPaddingPx = Collections.synchronizedMap(
         WeakHashMap<Any, Int>()
     )
@@ -767,6 +774,15 @@ internal object WeTypeResourceHooks {
                     param.result = null
                     return@hookBefore
                 }
+                if (WeTypeSettings.isLogoImageEnabledXposed()) {
+                    val night = isNightMode(imageView.resources)
+                    runCatching { resolveCustomLogoDrawable(night) }.getOrNull()?.let { custom ->
+                        imageView.setImageDrawable(custom)
+                        param.result = null
+                        return@hookBefore
+                    }
+                    // 未上传/解码失败则继续走下面的矢量回退路径。
+                }
                 val isDark = isDarkLogoResource(resId, darkLogoResIds, imageView.resources)
                 val alpha = if (isDark) {
                     LOGO_DARK_BG_ALPHA_FRACTION
@@ -793,6 +809,14 @@ internal object WeTypeResourceHooks {
                 if (!WeTypeSettings.isLogoShowEnabledXposed()) {
                     param.args[0] = ColorDrawable(Color.TRANSPARENT)
                     return@hookBefore
+                }
+                if (WeTypeSettings.isLogoImageEnabledXposed()) {
+                    val night = isNightMode(imageView.resources)
+                    runCatching { resolveCustomLogoDrawable(night) }.getOrNull()?.let { custom ->
+                        param.args[0] = custom
+                        return@hookBefore
+                    }
+                    // 未上传/解码失败则继续走下面的矢量回退路径。
                 }
                 var alpha = LOGO_LIGHT_BG_ALPHA_FRACTION
                 val uiMode = imageView.resources.configuration.uiMode and
@@ -840,13 +864,14 @@ internal object WeTypeResourceHooks {
                 }
                 val isDark = resourceId?.let { resId ->
                     isDarkLogoResource(resId, darkLogoResIds, imageView.resources)
-                } ?: (
-                    imageView.resources.configuration.uiMode and
-                        android.content.res.Configuration.UI_MODE_NIGHT_MASK ==
-                        android.content.res.Configuration.UI_MODE_NIGHT_YES
-                    )
+                } ?: isNightMode(imageView.resources)
+                val customDrawable = runCatching {
+                    if (WeTypeSettings.isLogoImageEnabledXposed()) {
+                        resolveCustomLogoDrawable(isNightMode(imageView.resources))
+                    } else null
+                }.getOrNull()
                 imageView.setImageDrawable(
-                    WeTypeIconDrawable(
+                    customDrawable ?: WeTypeIconDrawable(
                         if (isDark) LOGO_DARK_BG_ALPHA_FRACTION
                         else LOGO_LIGHT_BG_ALPHA_FRACTION,
                         isDark = isDark
@@ -906,6 +931,56 @@ internal object WeTypeResourceHooks {
         // literally contain "dark", e.g. icon_logo_grey_dark).
         val resName = runCatching { resources.getResourceEntryName(resId) }.getOrNull().orEmpty()
         return resName.contains("dark", ignoreCase = true)
+    }
+
+    private fun isNightMode(resources: Resources): Boolean =
+        resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
+
+    /**
+     * 自定义图片 Logo 解析：总开关关闭/未上传/解码失败返回 null，调用方回退矢量路径。
+     * PNG 原色显示；SVG 仅在开启“替换颜色”时按一级页主体颜色整体 Tint。
+     * 位图按 (updatedAt, type) 缓存，Tint 在 Drawable 绘制时应用，不进缓存 key。
+     */
+    private fun resolveCustomLogoDrawable(isNight: Boolean): Drawable? {
+        val snapshot = runCatching { WeTypeSettings.readSnapshotXposed() }.getOrNull()
+            ?: return null
+        if (!snapshot.logoImageEnabled) return null
+        val type = WeTypeSettings.normalizeLogoImageType(snapshot.logoImageType)
+        val bitmap = synchronized(customLogoCacheLock) {
+            val key = CustomLogoCacheKey(snapshot.logoImageUpdatedAt, type)
+            val cached = if (customLogoCacheKey == key) {
+                customLogoCacheBitmap?.takeUnless { it.isRecycled }
+            } else null
+            cached ?: decodeCustomLogoBitmap(snapshot, type)?.also { decoded ->
+                customLogoCacheBitmap?.recycle()
+                customLogoCacheBitmap = decoded
+                customLogoCacheKey = key
+            }
+        } ?: return null
+        val tint = if (type == WeTypeSettings.LOGO_IMAGE_TYPE_SVG &&
+            snapshot.logoSvgRecolorEnabled
+        ) {
+            LogoImageRenderer.resolveAccentColor(
+                colorMode = snapshot.logoColorMode,
+                brandColor = snapshot.appearanceColors["theme_color"]
+                    ?: WeTypeSettings.DEFAULT_LOGO_CUSTOM_COLOR,
+                customColor = snapshot.logoCustomColor,
+                isNight = isNight
+            )
+        } else null
+        return CustomLogoDrawable(bitmap, tint)
+    }
+
+    private fun decodeCustomLogoBitmap(
+        snapshot: WeTypeSettings.Snapshot,
+        type: String
+    ): Bitmap? {
+        return if (type == WeTypeSettings.LOGO_IMAGE_TYPE_SVG) {
+            LogoImageRenderer.renderSvg(snapshot.logoImageSvgText)
+        } else {
+            LogoImageRenderer.decodePng(snapshot.logoImagePngBase64)
+        }
     }
 
     fun hookToolbarIconBackground() {
@@ -1143,6 +1218,11 @@ internal object WeTypeResourceHooks {
             restoringLogoDrawable.remove()
         }
 
+        synchronized(customLogoCacheLock) {
+            runCatching { customLogoCacheBitmap?.recycle() }
+            customLogoCacheBitmap = null
+            customLogoCacheKey = null
+        }
         synchronized(typedArrayAttributeCache) { typedArrayAttributeCache.clear() }
         synchronized(resourcePackageCache) { resourcePackageCache.clear() }
         synchronized(candidateItemRootBaseLeftPaddingPx) { candidateItemRootBaseLeftPaddingPx.clear() }
