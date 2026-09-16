@@ -582,6 +582,8 @@ internal object WeTypeClipboardSearchUi {
     private var nativeKModeIconRefF41: java.lang.ref.WeakReference<ImageView>? = null
     @Volatile
     private var f41IconHooked = false
+    private val f41IconSetterHooked: MutableSet<String> =
+        Collections.synchronizedSet(LinkedHashSet<String>())
     @Volatile
     private var cachedSearchIconRes: Int? = null
     private val nativeKWatchersF41: MutableMap<EditText, TextWatcher> =
@@ -3261,44 +3263,89 @@ internal object WeTypeClipboardSearchUi {
         if (f41IconHooked) return
         f41IconHooked = true
         try {
-            val method = ImageView::class.java.getDeclaredMethod("setImageResource", Int::class.javaPrimitiveType)
-            method.isAccessible = true
-            method.hookBefore { param ->
-                try {
-                    val iv = param.thisObject as? ImageView ?: return@hookBefore
-                    if (!translatorShellByUs) return@hookBefore
-                    val icon = nativeKModeIconRefF41?.get()
-                    val isTarget = (icon != null && iv === icon) || isTranslatingLanguageIcon(iv)
-                    if (!isTarget) return@hookBefore
-                    val searchRes = cachedSearchIconRes ?: resolveSearchIconRes(iv, hostClassLoader ?: iv.context?.classLoader ?: classLoader)
-                    if (searchRes != null) {
-                        val incoming = param.args[0] as? Int
-                        if (incoming != searchRes) {
-                            param.args[0] = searchRes
-                            AndroidLog.i(TAG, "strip F41 icon: intercepted setImageResource $incoming->$searchRes (re-locked search icon)")
-                        }
-                    }
-                } catch (t: Throwable) {
-                    AndroidLog.e(TAG, "strip F41 mode icon hookBefore failed: $t")
-                }
-            }
-            method.hookAfter { param ->
-                try {
-                    val iv = param.thisObject as? ImageView ?: return@hookAfter
-                    if (!translatorShellByUs) return@hookAfter
-                    val icon = nativeKModeIconRefF41?.get()
-                    val isTarget = (icon != null && iv === icon) || isTranslatingLanguageIcon(iv)
-                    if (!isTarget) return@hookAfter
-                    syncModeIconAppearance(iv)
-                } catch (t: Throwable) {
-                    AndroidLog.e(TAG, "strip F41 mode icon hookAfter failed: $t")
-                }
-            }
+            installIconSetterHook(
+                ImageView::class.java.getDeclaredMethod("setImageResource", Int::class.javaPrimitiveType),
+                classLoader,
+                "ImageView"
+            )
             AndroidLog.i(TAG, "strip F41 mode icon stability hook installed")
         } catch (t: Throwable) {
             AndroidLog.e(TAG, "strip F41 mode icon stability hook install failed: $t")
             f41IconHooked = false
         }
+    }
+
+    /**
+     * 运行时图标类锁定：宿主翻译图标是 AppCompatImageView 的子类实现，
+     * 其 setImageResource 覆盖不会进入 ImageView 同名基类方法。
+     * 只锁定实际分发命中的最近覆盖，避免基类钩子漏拦宿主协程的复写。
+     */
+    private fun ensureModeIconSetterHooks(icon: ImageView?) {
+        try {
+            var owner: Class<*>? = icon?.javaClass ?: return
+            val fallbackLoader = hostClassLoader ?: icon?.context?.classLoader ?: return
+            while (owner != null && ImageView::class.java.isAssignableFrom(owner)) {
+                val setter = runCatching {
+                    owner.getDeclaredMethod("setImageResource", Int::class.javaPrimitiveType)
+                }.getOrNull()
+                if (setter != null) {
+                    if (setter.declaringClass != ImageView::class.java) {
+                        installIconSetterHook(setter, fallbackLoader, "runtime:${owner.name}")
+                    }
+                    return
+                }
+                if (owner == ImageView::class.java) return
+                owner = owner.superclass
+            }
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "strip F41 runtime icon hook failed: $t")
+        }
+    }
+
+    private fun installIconSetterHook(
+        method: java.lang.reflect.Method,
+        fallbackLoader: ClassLoader?,
+        source: String
+    ) {
+        val key = "${method.declaringClass.name}#setImageResource(int)"
+        if (!f41IconSetterHooked.add(key)) return
+        method.isAccessible = true
+        method.hookBefore { param ->
+            try {
+                val iv = param.thisObject as? ImageView ?: return@hookBefore
+                if (!shouldLockModeIconTarget(iv)) return@hookBefore
+                val searchRes = resolveLockedSearchIconRes(iv, fallbackLoader) ?: return@hookBefore
+                val incoming = param.args[0] as? Int
+                if (incoming != searchRes) {
+                    param.args[0] = searchRes
+                    AndroidLog.i(TAG, "strip F41 icon [$source]: intercepted setImageResource $incoming->$searchRes (re-locked search icon)")
+                }
+            } catch (t: Throwable) {
+                AndroidLog.e(TAG, "strip F41 mode icon hookBefore failed: $t")
+            }
+        }
+        method.hookAfter { param ->
+            try {
+                val iv = param.thisObject as? ImageView ?: return@hookAfter
+                if (!shouldLockModeIconTarget(iv)) return@hookAfter
+                syncModeIconAppearance(iv)
+            } catch (t: Throwable) {
+                AndroidLog.e(TAG, "strip F41 mode icon hookAfter failed: $t")
+            }
+        }
+        AndroidLog.i(TAG, "strip F41 mode icon setter hook installed: ${method.declaringClass.name} ($source)")
+    }
+
+    private fun shouldLockModeIconTarget(iv: ImageView): Boolean {
+        if (!translatorShellByUs) return false
+        val icon = nativeKModeIconRefF41?.get()
+        return (icon != null && iv === icon) || isTranslatingLanguageIcon(iv)
+    }
+
+    private fun resolveLockedSearchIconRes(iv: ImageView, fallbackLoader: ClassLoader?): Int? {
+        cachedSearchIconRes?.let { return it }
+        val loader = hostClassLoader ?: iv.context?.classLoader ?: fallbackLoader ?: return null
+        return resolveSearchIconRes(iv, loader)?.also { cachedSearchIconRes = it }
     }
 
     /** F41上行左图标替换：翻译图标换宿主搜索图标，颜色和亮度同步文字；无图标或无宿主res即保持原生。 */
@@ -3472,6 +3519,9 @@ internal object WeTypeClipboardSearchUi {
                 parts.modeTv.text = searchModeNameF41(searchModeF41)
             }
             // 上行左图标：翻译图标换宿主搜索图标（只换drawable，不碰尺寸/tint/padding；失败只记日志不拦mount）。
+            // 先按运行时图标类装好 setImageResource 锁定，避免 AppCompat 覆盖绕过基类钩子后闪回。
+            runCatching { ensureModeIconSetterHooks(parts.modeIcon) }
+                .onFailure { AndroidLog.e(TAG, "strip F41 runtime icon hook failed: ${it.message}") }
             runCatching { applySearchIconF41(parts) }
             // 下拉：经b#k喂搜索项 + d#setOnItemClick覆盖为搜索切换；失败fail-closed。
             if (!wireNativeDropdownF41(parts)) {
