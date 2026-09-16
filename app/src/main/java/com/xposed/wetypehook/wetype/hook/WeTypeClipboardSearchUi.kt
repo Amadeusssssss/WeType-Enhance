@@ -2776,6 +2776,9 @@ internal object WeTypeClipboardSearchUi {
                     AndroidLog.i(TAG, "search button re-shown on clipboard tab")
                 }
             }
+            // 剪贴板页返回键：按开关决定是否清理搜索关键词（默认清理）。
+            runCatching { ensureBackClearHook(backBtn) }
+                .onFailure { AndroidLog.e(TAG, "back clear hook failed: ${it.message}") }
             // 剪贴板页不挂行：清掉误留的行（只留按钮），不挤列表。
             removeStripInClipboard(page, root)
             // 跳回带词：直达 S5 过滤链路。
@@ -2803,6 +2806,63 @@ internal object WeTypeClipboardSearchUi {
             if (removed > 0) AndroidLog.i(TAG, "clipboard strip residuals removed: $removed")
         } catch (t: Throwable) {
             AndroidLog.e(TAG, "remove clipboard strip failed: ${t.message}")
+        }
+    }
+
+    /** 剪贴板页返回键已包装的己方 listener（view -> wrapper），防重复叠加。 */
+    private val backClearWrappers: MutableMap<View, View.OnClickListener> =
+        Collections.synchronizedMap(WeakHashMap<View, View.OnClickListener>())
+
+    /**
+     * 剪贴板页返回键：按 [WeTypeSettings.KEY_CLIPBOARD_SEARCH_CLEAR_ON_BACK]
+     * 决定是否在点击时清理搜索关键词（默认清理，恢复完整列表）。
+     *
+     * 只包装已有的原生 OnClickListener 并在放行前清理，不过滤逻辑本身
+     * 仍走 [applyKeywordDirect] → S5 防抖 + 后台 + setList 回放链。
+     * 宿主重设 listener 时下次 mount 会重新包装；已是己方包装则跳过防叠加。
+     * 搜索条收起（collapseStripF41）保持原有无条件清理语义，不受此开关影响。
+     */
+    private fun ensureBackClearHook(backBtn: View) {
+        try {
+            val listenerInfo = runCatching {
+                val getter = View::class.java.getDeclaredMethod("getListenerInfo")
+                    .apply { isAccessible = true }
+                getter.invoke(backBtn)
+            }.getOrNull() ?: return
+            val current = runCatching { readNativeField(listenerInfo, "mOnClickListener") }
+                .getOrNull() as? View.OnClickListener ?: return
+            // 同一 view 已包装过且 listener 未被宿主替换：跳过防叠加。
+            // SAM 转换的合成类 enclosing 不可靠，改用实例身份比对。
+            if (backClearWrappers[backBtn] === current) return
+            val original = current
+            val wrapper = View.OnClickListener { v ->
+                try {
+                    if (WeTypeSettings.isClipboardSearchClearOnBackXposed()) {
+                        val kw = runCatching { WeTypeClipboardSearchFilter.currentKeywordValue() }
+                            .getOrDefault("")
+                        if (kw.isNotEmpty()) {
+                            pendingKeyword = ""
+                            applyKeywordDirect("")
+                            AndroidLog.i(
+                                TAG,
+                                "clipboard back: cleared search keyword len=${kw.length} (clear-on-back ON)"
+                            )
+                        }
+                    } else {
+                        AndroidLog.i(TAG, "clipboard back: keep keyword (clear-on-back OFF)")
+                    }
+                } catch (t: Throwable) {
+                    AndroidLog.e(TAG, "clipboard back clear failed: ${t.message}")
+                } finally {
+                    runCatching { original.onClick(v) }
+                        .onFailure { AndroidLog.e(TAG, "clipboard back original failed: ${it.message}") }
+                }
+            }
+            backBtn.setOnClickListener(wrapper)
+            backClearWrappers[backBtn] = wrapper
+            AndroidLog.i(TAG, "clipboard back_btn wrapped for optional keyword clear")
+        } catch (t: Throwable) {
+            AndroidLog.e(TAG, "ensure back clear hook failed: ${t.message}")
         }
     }
 
