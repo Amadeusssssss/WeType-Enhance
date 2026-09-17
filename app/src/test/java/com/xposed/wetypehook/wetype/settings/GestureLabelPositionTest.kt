@@ -80,6 +80,26 @@ class GestureLabelPositionTest {
     }
 
     /**
+     * 横向基准必须是**键帽**而不是宿主分配的格子。绘制上下文里有两个矩形：格子含不等宽的
+     * 左右 padding（Q 左 13 右 8、Z 左 18 右 8…），拿格子当基准会让每个键按自己的 padding
+     * 各自偏移，肉眼看到的就是"全选没对齐"。取被包住且更窄的那个才是键帽。
+     */
+    @Test fun horizontalAnchorUsesKeyCapNotTheCell() {
+        assertTrue(
+            "绘制前必须先从多个矩形里挑出键帽",
+            hooks.contains("resolveKeyCapRect(access, drawCtx)")
+        )
+        assertTrue(
+            "键帽判据：被别的矩形包住、且更窄",
+            hooks.contains("outer.contains(inner) && inner.width() < outer.width()")
+        )
+        assertTrue(
+            "绘制上下文的矩形字段必须全部收集，不能再只取第一个",
+            hooks.contains("val rectFields = mutableListOf<Field>()")
+        )
+    }
+
+    /**
      * 垂直基准只能是按键区域的中线。锚到按键上下边缘是错的：那样"边距 0"落在按键外沿，
      * 用户无论怎么调都回不到中线，正是评论区"怎么调都不居中"的成因。
      */

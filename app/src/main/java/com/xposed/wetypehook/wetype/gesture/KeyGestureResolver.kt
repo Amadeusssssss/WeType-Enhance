@@ -196,6 +196,7 @@ class KeyGestureResolver(
         private data class KeyAccessor(
             val keyDataGetter: ((Any) -> Any?)?,
             val mainTextMethod: Method?,
+            val floatTextMethod: Method?,
             val idMethod: Method?
         )
         private val accessorCache = ConcurrentHashMap<Class<*>, KeyAccessor>()
@@ -221,14 +222,19 @@ class KeyGestureResolver(
                 }
             }
 
-            // 3. 动态从 keyContext (如 selfdraw.j / KeyData) 提取 mainText / id
+            // 3. 九宫格走专用路径：mainText 为空、数字在 floatText 或 `*_key_<数字>` 形状的 id 上。
+            //    容器（左侧候选栏 S1_recycleview、表情分页器）必须返回 '\u0000'，
+            //    绝不能从名字里捞数字。
+            if (isT9) return resolveT9KeyChar(keyContext)
+
+            // 4. 动态从 keyContext (如 selfdraw.j / KeyData) 提取 mainText / id
             val rawText = resolveRawText(keyContext)
             if (!rawText.isNullOrEmpty()) {
                 val normalized = normalizeKeyText(rawText, isT9)
                 if (normalized != '\u0000') return normalized
             }
 
-            // 4. View tag 兜底
+            // 5. View tag 兜底
             if (keyContext is View) {
                 val tagStr = keyContext.tag?.toString()
                 if (!tagStr.isNullOrEmpty()) {
@@ -272,9 +278,27 @@ class KeyGestureResolver(
                 "pqrs" -> '7'
                 "tuv" -> '8'
                 "wxyz" -> '9'
-                else -> str.firstOrNull { it in '1'..'9' }
+                else -> null
             }
         }
+
+        /**
+         * T9 可绑定键就是 1..9（设置页的九宫格也只有这九个格子），`0` 不在域内：
+         * 空格键的 `floatText` 是 `0`，放进来只会得到一个永远绑不上的键号。
+         */
+        private val T9_KEY_ID = Regex("""^S\d+_key_([1-9])$""")
+
+        /**
+         * 宿主给每个键的 `KeyData` 都填了稳定 id，但**九宫格按键的 `mainText` 是空的**
+         * （字母印在 `floatText` 上），所以取字符时只能退到 id。
+         *
+         * 退到 id 有一个坑：绘制上下文也会被喂给**容器**（左侧候选栏 `S1_recycleview`、
+         * 表情面板的分页器等）。曾经的兜底写法是"从字符串里捞第一个 1..9 的数字"，
+         * 于是 `S1_recycleview` 被解析成 `'1'`——用户绑定在 1 号键上的"粘贴"就凭空画到了
+         * 问号键左边那一列上。id 必须严格匹配 `*_key_<数字>` 才认，容器一律返回 null。
+         */
+        private fun t9DigitFromKeyId(id: String): Char? =
+            T9_KEY_ID.matchEntire(id.trim())?.groupValues?.get(1)?.firstOrNull()
 
         private fun resolveRawText(obj: Any): String? {
             val clazz = obj.javaClass
@@ -304,17 +328,44 @@ class KeyGestureResolver(
             return null
         }
 
+        /**
+         * 九宫格取键：`floatText`（键帽上的数字）优先，其次才认 `*_key_<数字>` 形状的 id。
+         * 只有 id 时 `mainText` 是空的（如 `S1_key_2`），只有数字键时 `floatText` 是空的
+         * （如 `S26_key_1`），两条路都得留着。
+         */
+        private fun resolveT9KeyChar(obj: Any): Char {
+            val clazz = obj.javaClass
+            val accessor = accessorCache.getOrPut(clazz) { buildAccessor(clazz) }
+
+            fun digitFrom(target: Any, a: KeyAccessor): Char? {
+                a.floatTextMethod?.let { m ->
+                    runCatching { m.invoke(target) as? String }.getOrNull()
+                        ?.let { t9DigitFromKeyId(it) ?: it.trim().firstOrNull { c -> c in '1'..'9' } }
+                        ?.let { return it }
+                }
+                a.idMethod?.let { m ->
+                    runCatching { m.invoke(target) as? String }.getOrNull()?.let { t9DigitFromKeyId(it) }
+                        ?.let { return it }
+                }
+                return null
+            }
+
+            digitFrom(obj, accessor)?.let { return it }
+            val keyData = accessor.keyDataGetter?.invoke(obj) ?: return '\u0000'
+            return digitFrom(keyData, accessorCache.getOrPut(keyData.javaClass) { buildAccessor(keyData.javaClass) })
+                ?: '\u0000'
+        }
+
         private fun buildAccessor(clazz: Class<*>): KeyAccessor {
             var mainTextM: Method? = null
+            var floatTextM: Method? = null
             var idM: Method? = null
             for (m in clazz.methods) {
                 if (m.parameterTypes.isEmpty() && m.returnType == String::class.java) {
-                    if (m.name == "getMainText") {
-                        m.isAccessible = true
-                        mainTextM = m
-                    } else if (m.name == "getId") {
-                        m.isAccessible = true
-                        idM = m
+                    when (m.name) {
+                        "getMainText" -> { m.isAccessible = true; mainTextM = m }
+                        "getFloatText" -> { m.isAccessible = true; floatTextM = m }
+                        "getId" -> { m.isAccessible = true; idM = m }
                     }
                 }
             }
@@ -342,7 +393,7 @@ class KeyGestureResolver(
                 }
             }
 
-            return KeyAccessor(getter, mainTextM, idM)
+            return KeyAccessor(getter, mainTextM, floatTextM, idM)
         }
     }
 }

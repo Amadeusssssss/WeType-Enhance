@@ -17,6 +17,11 @@ import java.util.Locale
 internal object WeTypeGestureHooks {
 
     private const val TAG = "WeTypeGesture"
+    private const val KEYBOARD_PACKAGE = "com.tencent.wetype.plugin.hld.keyboard"
+    private const val SELF_DRAW_PACKAGE = "com.tencent.wetype.plugin.hld.keyboard.selfdraw."
+    private const val DRAW_CONTEXT_CLASS = "com.tencent.wetype.plugin.hld.keyboard.selfdraw.j"
+    private const val EVENT_EXTRA_CLASS = "com.tencent.wetype.plugin.hld.keyboard.selfdraw.p"
+    private const val MOTION_EVENT_CLASS = "android.view.MotionEvent"
     private var resolver: KeyGestureResolver? = null
     @Volatile
     private var isDispatchingCancel = false
@@ -47,7 +52,7 @@ internal object WeTypeGestureHooks {
     private fun resolveKeyDataMethod(bridge: DexKitBridge, classLoader: ClassLoader): Method? {
         return runCatching {
             bridge.findMethod {
-                searchPackages("com.tencent.wetype.plugin.hld.keyboard")
+                searchPackages(KEYBOARD_PACKAGE)
                 matcher {
                     name = "getMainText"
                     returnType = "java.lang.String"
@@ -59,7 +64,7 @@ internal object WeTypeGestureHooks {
     private fun resolveKeyIdMethod(bridge: DexKitBridge, classLoader: ClassLoader): Method? {
         return runCatching {
             bridge.findMethod {
-                searchPackages("com.tencent.wetype.plugin.hld.keyboard")
+                searchPackages(KEYBOARD_PACKAGE)
                 matcher {
                     name = "getId"
                 }
@@ -69,9 +74,25 @@ internal object WeTypeGestureHooks {
     }
 
     /**
-     * 安装触摸 hook：QWERTY 与 T9 指纹可能命中同一基类方法，去重后每个
-     * 独立方法只装一个 before-hook，QWERTY/T9 运行时按视图类名判定
-     * （与 WeTypeKeyLabelHooks.isT9Key 同规则），避免双 hook 互相覆盖状态机。
+     * 安装触摸 hook。
+     *
+     * 宿主把触摸分发拆成两条**互不调用**的路径，靠 `selfdraw.n#onTouch` 里的
+     * `invoke-virtual n.l2` 做多态派发：
+     *
+     * - QWERTY：`b.l2` → `b.Y2(j, ev, p)`（`b` 是 26 键基类，含 "onTouch move2 …" 串）
+     * - 九宫格：`c.l2` → `c.b3(j, ev, p)`（`c` 是 T9 基类，方法体里**一个字符串常量都没有**，
+     *   只有一句 `"toLowerCase(...)"` 的 Kotlin 空检查）
+     *
+     * 所以按字符串指纹只能捞到 `b.Y2`，九宫格整条路径永远收不到 hook——历史上模块日志里
+     * 每一条 `Gesture triggered:` 都是 q/w/z 这类 26 键绑定，T9 一条都没有。
+     *
+     * 两个指纹串其实**都在 `b.Y2` 里面**（"move2" 与 "isUpperSlidedCancelState true"），
+     * 这正是当年"两个指纹命中同一方法"那条日志的真相，不是宿主合并了实现。
+     *
+     * 兜底判据改成结构化定位，与宿主命名无关：在 `…keyboard.selfdraw` 包里找
+     * `(selfdraw.j, MotionEvent, selfdraw.p)Z` 这个分发签名。宿主每个版本恰好只有三处：
+     * `n` 基类里的空格键专用处理 `G1/H1`，以及 `b`/`c` 两个子类各自的实现。除指纹命中的
+     * 那个（及它所在基类的空格处理）之外剩下的就是九宫格入口。
      */
     private fun installTouchHooks(bridge: DexKitBridge, classLoader: ClassLoader, resolver: KeyGestureResolver) {
         val qwertyMethod = findTouchMethod(
@@ -79,20 +100,30 @@ internal object WeTypeGestureHooks {
             usingString = "onTouch move2 lastKeyOperation is null",
             filterReturnBoolean = true
         )
-        val t9Method = findTouchMethod(
-            bridge, classLoader,
-            usingString = "onTouch up isUpperSlidedCancelState true",
-            filterReturnBoolean = false
-        )
         if (qwertyMethod == null) Log.e("[$TAG] Failed to locate QWERTY touch method")
-        if (t9Method == null) Log.e("[$TAG] Failed to locate T9 touch method")
 
         val targets = linkedSetOf<Method>()
         qwertyMethod?.let { targets += it }
-        t9Method?.let { targets += it }
-        if (targets.isEmpty()) return
-        if (qwertyMethod != null && qwertyMethod == t9Method) {
-            Log.i("[$TAG] QWERTY/T9 fingerprints hit the same method; single hook with runtime keyboard-type detection")
+        if (qwertyMethod == null) {
+            Log.e("[$TAG] QWERTY touch method is required before T9 can be resolved")
+            return
+        }
+
+        // `n` 基类里的空格键专用处理：签名与 `b.Y2` 相同，靠它调用了 getActionButton 区分。
+        var skippedBaseSpaceHandler = false
+        for (method in findTouchDispatchers(bridge, classLoader)) {
+            if (method == qwertyMethod) continue
+            if (method.declaringClass == qwertyMethod.declaringClass.superclass) {
+                skippedBaseSpaceHandler = true
+                continue
+            }
+            targets += method
+        }
+        if (!skippedBaseSpaceHandler) {
+            Log.i("[$TAG] No base-class space handler found; skipping that filter")
+        }
+        if (targets.size == 1) {
+            Log.e("[$TAG] Failed to locate the T9 touch method; T9 gestures will not fire")
         }
 
         targets.forEach { method ->
@@ -141,8 +172,8 @@ internal object WeTypeGestureHooks {
         }
         // 保留历史日志关键字，便于旧诊断脚本比对
         if (qwertyMethod != null) Log.i("[$TAG] Hooked QWERTY touch: ${qwertyMethod.declaringClass.name}#${qwertyMethod.name}")
-        if (t9Method != null && t9Method != qwertyMethod) {
-            Log.i("[$TAG] Hooked T9 touch: ${t9Method.declaringClass.name}#${t9Method.name}")
+        targets.firstOrNull { it != qwertyMethod }?.let {
+            Log.i("[$TAG] Hooked T9 touch: ${it.declaringClass.name}#${it.name}")
         }
     }
 
@@ -154,7 +185,7 @@ internal object WeTypeGestureHooks {
     ): Method? {
         return runCatching {
             bridge.findMethod {
-                searchPackages("com.tencent.wetype.plugin.hld.keyboard")
+                searchPackages(KEYBOARD_PACKAGE)
                 matcher {
                     usingStrings(usingString)
                     if (filterReturnBoolean) returnType = "boolean"
@@ -163,6 +194,31 @@ internal object WeTypeGestureHooks {
                 data.paramTypes.any { it.name == "android.view.MotionEvent" }
             }?.getMethodInstance(classLoader)
         }.getOrNull()
+    }
+
+    /**
+     * 靠**签名形状**而不是类名/方法名找触摸分发入口。宿主每次发版都会重命名混淆类，
+     * 但 `(selfdraw.j, MotionEvent, selfdraw.p)Z` 这个签名在 3.5.3 与 3.5.4 上完全一致。
+     */
+    private fun findTouchDispatchers(bridge: DexKitBridge, classLoader: ClassLoader): List<Method> {
+        return runCatching {
+            bridge.findMethod {
+                searchPackages(KEYBOARD_PACKAGE)
+                matcher {
+                    returnType = "boolean"
+                    paramCount = 3
+                    addParamType(DRAW_CONTEXT_CLASS)
+                    addParamType(MOTION_EVENT_CLASS)
+                    addParamType(EVENT_EXTRA_CLASS)
+                }
+            }.mapNotNull { data ->
+                if (data.paramTypes.size != 3) return@mapNotNull null
+                if (data.paramTypes[1].name != MOTION_EVENT_CLASS) return@mapNotNull null
+                if (!data.paramTypes[0].name.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
+                if (!data.paramTypes[2].name.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
+                runCatching { data.getMethodInstance(classLoader) }.getOrNull()
+            }
+        }.getOrDefault(emptyList())
     }
 
     private fun isT9View(view: View): Boolean {

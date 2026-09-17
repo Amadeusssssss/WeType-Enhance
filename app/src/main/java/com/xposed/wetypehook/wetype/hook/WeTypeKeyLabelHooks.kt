@@ -39,7 +39,11 @@ internal object WeTypeKeyLabelHooks {
     private const val DRAW_CONTEXT_PACKAGE = "com.tencent.wetype.plugin.hld.keyboard.selfdraw."
     private const val CANVAS_CLASS = "android.graphics.Canvas"
 
-    private data class KeyDrawAccess(val viewField: Field, val rectField: Field)
+    private data class KeyDrawAccess(
+        val viewField: Field,
+        /** 绘制上下文里可能有多个矩形，运行时再区分格子与内容块。 */
+        val rectFields: List<Field>
+    )
 
     private data class LabelPaintStyle(
         val textSizePx: Float,
@@ -121,7 +125,7 @@ internal object WeTypeKeyLabelHooks {
         if (drawCtx == null) return
         val access = accessFor(drawCtx) ?: return
         val keyView = runCatching { access.viewField.get(drawCtx) as? View }.getOrNull() ?: return
-        val rect = runCatching { access.rectField.get(drawCtx) as? Rect }.getOrNull() ?: return
+        val rect = resolveKeyCapRect(access, drawCtx) ?: return
         if (rect.isEmpty) return
         if (!WeTypeSettings.isShowGestureKeyLabelsXposed()) return
 
@@ -151,11 +155,12 @@ internal object WeTypeKeyLabelHooks {
             else -> baseTextSize
         }
         val metrics = paint.fontMetrics
-        // 水平恒以按键中线居中，偏左/偏右由左右边距的差值调。
+        // 两个轴都锚在**键帽**（真正画出来的圆角方块）上，跟宿主的字母同一个基准。用键帽
+        // 而不是格子，是因为格子含不等宽的左右 padding，会让每个键各自偏一点点。
         val x = (rect.left + rect.right) / 2f +
             (snapshot.marginLeftPx - snapshot.marginRightPx) / 2f
-        // 垂直基准是按键区域的中线（不是按键上下边缘）：边距为 0 时标签墨迹中心
-        // 正压在中线上，顶部往上、底部往下各偏移各自的边距，默认各 15dp 落在字母上下方。
+        // 垂直基准是键帽中线：边距为 0 时标签墨迹中心正压在中线上，顶部往上、底部往下
+        // 各偏移各自的边距，默认各 15dp 落在字母与键帽下沿之间。
         val midline = (rect.top + rect.bottom) / 2f
         val midlineBaseline = midline - (metrics.ascent + metrics.descent) / 2f
         val y = when (snapshot.verticalPosition) {
@@ -282,22 +287,22 @@ internal object WeTypeKeyLabelHooks {
         val clazz = drawCtx.javaClass
         accessCache[clazz]?.let { return it }
         var viewField: Field? = null
-        var rectField: Field? = null
+        val rectFields = mutableListOf<Field>()
         var search: Class<*>? = clazz
-        while (search != null && search != Any::class.java && (viewField == null || rectField == null)) {
+        while (search != null && search != Any::class.java) {
             for (field in search.declaredFields) {
                 if (viewField == null && View::class.java.isAssignableFrom(field.type)) {
                     field.isAccessible = true
                     viewField = field
-                } else if (rectField == null && field.type == Rect::class.java) {
+                } else if (field.type == Rect::class.java && !Modifier.isStatic(field.modifiers)) {
                     field.isAccessible = true
-                    rectField = field
+                    rectFields += field
                 }
             }
             search = search.superclass
         }
-        val access = if (viewField != null && rectField != null) {
-            KeyDrawAccess(viewField, rectField)
+        val access = if (viewField != null && rectFields.isNotEmpty()) {
+            KeyDrawAccess(viewField, rectFields)
         } else {
             null
         }
@@ -305,12 +310,35 @@ internal object WeTypeKeyLabelHooks {
         if (access != null) {
             Log.i(
                 "[$TAG] Resolved draw context ${clazz.name}: " +
-                    "view=${viewField?.name} rect=${rectField?.name}"
+                    "view=${viewField?.name} rects=${rectFields.joinToString { it.name }}"
             )
         } else {
             Log.e("[$TAG] Failed to resolve View/Rect fields in ${clazz.name}")
         }
         return access
+    }
+
+    /**
+     * 挑出**键帽**矩形。绘制上下文里有多个矩形，最外层的那个是宿主分配给这个键的**格子**
+     * （含不等宽的左右 padding：Q 左 13 右 8、W 左右各 7、Z 左 18 右 8…），里层的是按键
+     * 真正画出来的**键帽**（尺寸等于 `KeyData.width/height`，同一排的字母键完全一致）。
+     *
+     * 判据：被别的矩形包住、且更窄的那个就是键帽。识别不出来时退回第一个矩形，保持只有
+     * 单个矩形字段的宿主版本行为不变。
+     *
+     * 曾经直接用第一个矩形，结果每个键按自己的 padding 差值偏移——Z 偏 5px、X 偏 4px、
+     * C 偏 3px、Q 偏 2.5px，就是肉眼看到的"全选没对齐"。
+     */
+    private fun resolveKeyCapRect(access: KeyDrawAccess, drawCtx: Any): Rect? {
+        val rects = access.rectFields.mapNotNull { field ->
+            runCatching { field.get(drawCtx) as? Rect }.getOrNull()?.takeIf { !it.isEmpty }
+        }
+        if (rects.isEmpty()) return null
+        if (rects.size == 1) return rects[0]
+        return rects.firstOrNull { outer ->
+            rects.any { inner -> inner !== outer && outer.contains(inner) && inner.width() < outer.width() }
+        }?.let { outer -> rects.filter { outer.contains(it) }.minBy { it.width() } }
+            ?: rects.first()
     }
 
     private fun isT9Key(view: View, drawCtx: Any): Boolean {
