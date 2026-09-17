@@ -42,6 +42,7 @@ object WeTypeSettings {
     private const val KEY_EDGE_HIGHLIGHT_INTENSITY = "edge_highlight_intensity"
     private const val KEY_KEY_OPACITY = "key_opacity"
     private const val KEY_KEY_OPACITY_MIGRATED = "key_opacity_migrated"
+    private const val KEY_GESTURE_LABEL_MIDLINE_MIGRATED = "gesture_label_midline_migrated"
     // Keep the original preference key so existing saved values still migrate cleanly.
     private const val KEY_CANDIDATE_BACKGROUND_ALPHA = "key_color_hook_alpha"
     private const val KEY_CANDIDATE_BACKGROUND_CORNER = "candidate_background_corner"
@@ -137,14 +138,31 @@ object WeTypeSettings {
     const val GESTURE_LABEL_POSITION_BOTTOM = 0
     const val GESTURE_LABEL_POSITION_TOP = 1
 
+    // 边距上限取 48dp：默认 15dp 之后向下只剩约 8dp 余量（216 实测键格高 143px、
+    // 中线到底边 71px≈23.7dp），再往上加标签就顶穿按键底边，所以上限只作兜底，
+    // 不再往上抬——想让标签跑出按键是用户的自由，但默认值必须留呼吸感。
+    const val GESTURE_LABEL_MARGIN_MIN_DP = 0
+    const val GESTURE_LABEL_MARGIN_MAX_DP = 48
+
     const val DEFAULT_SHOW_GESTURE_KEY_LABELS = true
     const val DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP = 9
     const val DEFAULT_GESTURE_LABEL_ALPHA = 153
+    // 默认底部锚定：基准是按键区域的垂直中线，边距是沿中线向下的偏移量。
+    // 216 实测（密度 3.0，键格 y=[1494,1636]、高 143px、中线 1565，字母墨迹底 1590）：
+    // 10dp(30px) 墨迹中心只落到中线下方 34px，仍挤在字母上；
+    // 20dp(60px) 落到中线下方 60.5px，顶到按键底边（1637 > 1636），太局促；
+    // 15dp(45px) 落在中线下方约 45px，字母与按键底边之间才留出上下呼吸。
     const val DEFAULT_GESTURE_LABEL_POSITION = GESTURE_LABEL_POSITION_BOTTOM
-    const val DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP = 0
-    const val DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP = 3
+    const val DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP = 15
+    const val DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP = 15
     const val DEFAULT_GESTURE_LABEL_MARGIN_LEFT_DP = 0
     const val DEFAULT_GESTURE_LABEL_MARGIN_RIGHT_DP = 0
+
+    // 旧版默认边距（上 0 / 下 3）把标签压在按键最底部，正是"怎么调都不居中"的成因。
+    // 成对命中说明用户从没动过这两个滑块，读配置时提升到新默认值；只动过其中一个
+    // 的用户不会被覆盖。非持久迁移：不改写存量文件，下次保存才落 KEY_..._MIGRATED。
+    private const val LEGACY_DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP = 0
+    private const val LEGACY_DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP = 3
 
     const val KEY_LOGO_ENABLED = "logo_enabled"
     const val KEY_LOGO_SHOW_ENABLED = "logo_show_enabled"
@@ -759,14 +777,11 @@ object WeTypeSettings {
             showGestureKeyLabels = showGestureKeyLabels,
             gestureLabelTextSizeSp = gestureLabelTextSizeSp.coerceIn(6, 16),
             gestureLabelAlpha = gestureLabelAlpha.coerceIn(0, 255),
-            gestureLabelPosition = gestureLabelPosition.coerceIn(
-                GESTURE_LABEL_POSITION_BOTTOM,
-                GESTURE_LABEL_POSITION_TOP
-            ),
-            gestureLabelMarginTopDp = gestureLabelMarginTopDp.coerceIn(0, 24),
-            gestureLabelMarginBottomDp = gestureLabelMarginBottomDp.coerceIn(0, 24),
-            gestureLabelMarginLeftDp = gestureLabelMarginLeftDp.coerceIn(0, 24),
-            gestureLabelMarginRightDp = gestureLabelMarginRightDp.coerceIn(0, 24),
+            gestureLabelPosition = normalizeGestureLabelPosition(gestureLabelPosition),
+            gestureLabelMarginTopDp = gestureLabelMarginTopDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginBottomDp = gestureLabelMarginBottomDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginLeftDp = gestureLabelMarginLeftDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginRightDp = gestureLabelMarginRightDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             logoEnabled = logoEnabled,
             logoShowEnabled = logoShowEnabled,
             logoColorMode = logoColorMode,
@@ -1101,14 +1116,11 @@ object WeTypeSettings {
             showGestureKeyLabels = showGestureKeyLabels,
             gestureLabelTextSizeSp = gestureLabelTextSizeSp.coerceIn(6, 16),
             gestureLabelAlpha = gestureLabelAlpha.coerceIn(0, 255),
-            gestureLabelPosition = gestureLabelPosition.coerceIn(
-                GESTURE_LABEL_POSITION_BOTTOM,
-                GESTURE_LABEL_POSITION_TOP
-            ),
-            gestureLabelMarginTopDp = gestureLabelMarginTopDp.coerceIn(0, 24),
-            gestureLabelMarginBottomDp = gestureLabelMarginBottomDp.coerceIn(0, 24),
-            gestureLabelMarginLeftDp = gestureLabelMarginLeftDp.coerceIn(0, 24),
-            gestureLabelMarginRightDp = gestureLabelMarginRightDp.coerceIn(0, 24),
+            gestureLabelPosition = normalizeGestureLabelPosition(gestureLabelPosition),
+            gestureLabelMarginTopDp = gestureLabelMarginTopDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginBottomDp = gestureLabelMarginBottomDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginLeftDp = gestureLabelMarginLeftDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginRightDp = gestureLabelMarginRightDp.coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             logoEnabled = logoEnabled,
             logoShowEnabled = logoShowEnabled,
             logoColorMode = normalizeLogoColorMode(logoColorMode),
@@ -1209,6 +1221,7 @@ object WeTypeSettings {
             .putInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, snapshot.gestureLabelMarginBottomDp)
             .putInt(KEY_GESTURE_LABEL_MARGIN_LEFT_DP, snapshot.gestureLabelMarginLeftDp)
             .putInt(KEY_GESTURE_LABEL_MARGIN_RIGHT_DP, snapshot.gestureLabelMarginRightDp)
+            .putBoolean(KEY_GESTURE_LABEL_MIDLINE_MIGRATED, true)
             .putBoolean(KEY_LOGO_ENABLED, snapshot.logoEnabled)
             .putBoolean(KEY_LOGO_SHOW_ENABLED, snapshot.logoShowEnabled)
             .putString(KEY_LOGO_COLOR_MODE, snapshot.logoColorMode)
@@ -1390,6 +1403,7 @@ object WeTypeSettings {
         putInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, gestureLabelMarginBottomDp)
         putInt(KEY_GESTURE_LABEL_MARGIN_LEFT_DP, gestureLabelMarginLeftDp)
         putInt(KEY_GESTURE_LABEL_MARGIN_RIGHT_DP, gestureLabelMarginRightDp)
+        putBoolean(KEY_GESTURE_LABEL_MIDLINE_MIGRATED, true)
         putBoolean(KEY_LOGO_ENABLED, logoEnabled)
         putBoolean(KEY_LOGO_SHOW_ENABLED, logoShowEnabled)
         putString(KEY_LOGO_COLOR_MODE, logoColorMode)
@@ -1512,16 +1526,17 @@ object WeTypeSettings {
                 .coerceIn(6, 16),
             gestureLabelAlpha = getInt(KEY_GESTURE_LABEL_ALPHA, defaults.gestureLabelAlpha)
                 .coerceIn(0, 255),
-            gestureLabelPosition = getInt(KEY_GESTURE_LABEL_POSITION, defaults.gestureLabelPosition)
-                .coerceIn(GESTURE_LABEL_POSITION_BOTTOM, GESTURE_LABEL_POSITION_TOP),
+            gestureLabelPosition = normalizeGestureLabelPosition(
+                getInt(KEY_GESTURE_LABEL_POSITION, defaults.gestureLabelPosition)
+            ),
             gestureLabelMarginTopDp = getInt(KEY_GESTURE_LABEL_MARGIN_TOP_DP, defaults.gestureLabelMarginTopDp)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             gestureLabelMarginBottomDp = getInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, defaults.gestureLabelMarginBottomDp)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             gestureLabelMarginLeftDp = getInt(KEY_GESTURE_LABEL_MARGIN_LEFT_DP, defaults.gestureLabelMarginLeftDp)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             gestureLabelMarginRightDp = getInt(KEY_GESTURE_LABEL_MARGIN_RIGHT_DP, defaults.gestureLabelMarginRightDp)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             logoEnabled = getBoolean(KEY_LOGO_ENABLED, defaults.logoEnabled),
             logoShowEnabled = getBoolean(KEY_LOGO_SHOW_ENABLED, defaults.logoShowEnabled),
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE) ?: defaults.logoColorMode),
@@ -1552,6 +1567,14 @@ object WeTypeSettings {
         )
     }
 
+    /** 标签位置归一化：只认顶部/底部（含已下线的旧"居中"=2），其余回到默认。 */
+    private fun normalizeGestureLabelPosition(value: Int): Int =
+        if (value == GESTURE_LABEL_POSITION_TOP || value == GESTURE_LABEL_POSITION_BOTTOM) {
+            value
+        } else {
+            DEFAULT_GESTURE_LABEL_POSITION
+        }
+
     private fun SharedPreferences.toSnapshot(): Snapshot {
         val shouldMigrateLegacyKeyOpacity = contains(KEY_KEY_OPACITY) &&
             !getBoolean(KEY_KEY_OPACITY_MIGRATED, false)
@@ -1559,6 +1582,23 @@ object WeTypeSettings {
             getInt(KEY_KEY_OPACITY, 255).coerceIn(0, 255)
         } else {
             null
+        }
+        // 旧“居中”(2)已下线：只有顶部/底部合法，非法存量一律回到默认（底部）。
+        val storedLabelPosition = getInt(KEY_GESTURE_LABEL_POSITION, DEFAULT_GESTURE_LABEL_POSITION)
+        val migratedLabelPosition = normalizeGestureLabelPosition(storedLabelPosition)
+        // 存量里的旧默认上下边距提升到中线默认值，见 LEGACY_DEFAULT_GESTURE_LABEL_MARGIN_*。
+        val shouldMigrateLabelMargins = !getBoolean(KEY_GESTURE_LABEL_MIDLINE_MIGRATED, false) &&
+            getInt(KEY_GESTURE_LABEL_MARGIN_TOP_DP, -1) == LEGACY_DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP &&
+            getInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, -1) == LEGACY_DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP
+        val migratedMarginTopDp = if (shouldMigrateLabelMargins) {
+            DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP
+        } else {
+            getInt(KEY_GESTURE_LABEL_MARGIN_TOP_DP, DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP)
+        }
+        val migratedMarginBottomDp = if (shouldMigrateLabelMargins) {
+            DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP
+        } else {
+            getInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP)
         }
         return Snapshot(
             lightColor = getInt(KEY_LIGHT_COLOR, DEFAULT_LIGHT_COLOR),
@@ -1639,16 +1679,15 @@ object WeTypeSettings {
                 .coerceIn(6, 16),
             gestureLabelAlpha = getInt(KEY_GESTURE_LABEL_ALPHA, DEFAULT_GESTURE_LABEL_ALPHA)
                 .coerceIn(0, 255),
-            gestureLabelPosition = getInt(KEY_GESTURE_LABEL_POSITION, DEFAULT_GESTURE_LABEL_POSITION)
-                .coerceIn(GESTURE_LABEL_POSITION_BOTTOM, GESTURE_LABEL_POSITION_TOP),
-            gestureLabelMarginTopDp = getInt(KEY_GESTURE_LABEL_MARGIN_TOP_DP, DEFAULT_GESTURE_LABEL_MARGIN_TOP_DP)
-                .coerceIn(0, 24),
-            gestureLabelMarginBottomDp = getInt(KEY_GESTURE_LABEL_MARGIN_BOTTOM_DP, DEFAULT_GESTURE_LABEL_MARGIN_BOTTOM_DP)
-                .coerceIn(0, 24),
+            gestureLabelPosition = migratedLabelPosition,
+            gestureLabelMarginTopDp = migratedMarginTopDp
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
+            gestureLabelMarginBottomDp = migratedMarginBottomDp
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             gestureLabelMarginLeftDp = getInt(KEY_GESTURE_LABEL_MARGIN_LEFT_DP, DEFAULT_GESTURE_LABEL_MARGIN_LEFT_DP)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             gestureLabelMarginRightDp = getInt(KEY_GESTURE_LABEL_MARGIN_RIGHT_DP, DEFAULT_GESTURE_LABEL_MARGIN_RIGHT_DP)
-                .coerceIn(0, 24),
+                .coerceIn(GESTURE_LABEL_MARGIN_MIN_DP, GESTURE_LABEL_MARGIN_MAX_DP),
             logoEnabled = getBoolean(KEY_LOGO_ENABLED, DEFAULT_LOGO_ENABLED),
             logoShowEnabled = getBoolean(KEY_LOGO_SHOW_ENABLED, DEFAULT_LOGO_SHOW_ENABLED),
             logoColorMode = normalizeLogoColorMode(getString(KEY_LOGO_COLOR_MODE, DEFAULT_LOGO_COLOR_MODE)),

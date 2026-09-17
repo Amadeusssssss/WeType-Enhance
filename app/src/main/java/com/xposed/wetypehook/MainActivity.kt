@@ -2537,7 +2537,10 @@ private fun LazyListScope.GestureTabContent(
                 MiuixDropdownPreference(
                     title = "标签位置",
                     items = listOf("底部", "顶部"),
-                    selectedIndex = if (gestureLabelPosition == WeTypeSettings.GESTURE_LABEL_POSITION_TOP) 1 else 0,
+                    selectedIndex = when (gestureLabelPosition) {
+                        WeTypeSettings.GESTURE_LABEL_POSITION_TOP -> 1
+                        else -> 0
+                    },
                     onSelectedIndexChange = { index ->
                         onGestureLabelPositionChange(
                             if (index == 1) {
@@ -2551,26 +2554,54 @@ private fun LazyListScope.GestureTabContent(
                 SliderPreferenceItem(
                     title = "标签上边距: ${gestureLabelMarginTopDp} dp",
                     value = gestureLabelMarginTopDp,
-                    max = 24,
-                    onValueChange = { onGestureLabelMarginTopDpChange(it.coerceIn(0, 24)) }
+                    max = WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP,
+                    onValueChange = {
+                        onGestureLabelMarginTopDpChange(
+                            it.coerceIn(
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                            )
+                        )
+                    }
                 )
                 SliderPreferenceItem(
                     title = "标签下边距: ${gestureLabelMarginBottomDp} dp",
                     value = gestureLabelMarginBottomDp,
-                    max = 24,
-                    onValueChange = { onGestureLabelMarginBottomDpChange(it.coerceIn(0, 24)) }
+                    max = WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP,
+                    onValueChange = {
+                        onGestureLabelMarginBottomDpChange(
+                            it.coerceIn(
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                            )
+                        )
+                    }
                 )
                 SliderPreferenceItem(
                     title = "标签左边距: ${gestureLabelMarginLeftDp} dp",
                     value = gestureLabelMarginLeftDp,
-                    max = 24,
-                    onValueChange = { onGestureLabelMarginLeftDpChange(it.coerceIn(0, 24)) }
+                    max = WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP,
+                    onValueChange = {
+                        onGestureLabelMarginLeftDpChange(
+                            it.coerceIn(
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                            )
+                        )
+                    }
                 )
                 SliderPreferenceItem(
                     title = "标签右边距: ${gestureLabelMarginRightDp} dp",
                     value = gestureLabelMarginRightDp,
-                    max = 24,
-                    onValueChange = { onGestureLabelMarginRightDpChange(it.coerceIn(0, 24)) }
+                    max = WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP,
+                    onValueChange = {
+                        onGestureLabelMarginRightDpChange(
+                            it.coerceIn(
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                                WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                            )
+                        )
+                    }
                 )
             }
         }

@@ -151,26 +151,25 @@ internal object WeTypeKeyLabelHooks {
             else -> baseTextSize
         }
         val metrics = paint.fontMetrics
-        val zoneLeft = rect.left + snapshot.marginLeftPx
-        val zoneTop = rect.top + snapshot.marginTopPx
-        val zoneRight = rect.right - snapshot.marginRightPx
-        val zoneBottom = rect.bottom - snapshot.marginBottomPx
-        if (zoneRight > zoneLeft && zoneBottom > zoneTop) {
-            val x = (zoneLeft + zoneRight) / 2f
-            val y = if (snapshot.anchorTop) {
-                zoneTop - metrics.ascent
-            } else {
-                zoneBottom - metrics.descent
-            }
-            canvas.drawText(text, x, y, paint)
+        // 水平恒以按键中线居中，偏左/偏右由左右边距的差值调。
+        val x = (rect.left + rect.right) / 2f +
+            (snapshot.marginLeftPx - snapshot.marginRightPx) / 2f
+        // 垂直基准是按键区域的中线（不是按键上下边缘）：边距为 0 时标签墨迹中心
+        // 正压在中线上，顶部往上、底部往下各偏移各自的边距，默认各 15dp 落在字母上下方。
+        val midline = (rect.top + rect.bottom) / 2f
+        val midlineBaseline = midline - (metrics.ascent + metrics.descent) / 2f
+        val y = when (snapshot.verticalPosition) {
+            WeTypeSettings.GESTURE_LABEL_POSITION_TOP -> midlineBaseline - snapshot.marginTopPx
+            else -> midlineBaseline + snapshot.marginBottomPx
         }
+        canvas.drawText(text, x, y, paint)
         paint.textSize = baseTextSize
     }
 
     private data class LabelStyleSnapshot(
         val textSizePx: Float,
         val color: Int,
-        val anchorTop: Boolean,
+        val verticalPosition: Int,
         val marginLeftPx: Float,
         val marginTopPx: Float,
         val marginRightPx: Float,
@@ -191,16 +190,31 @@ internal object WeTypeKeyLabelHooks {
                 return LabelStyleSnapshot(
                     textSizePx = textSizePx,
                     color = (base and 0x00FFFFFF) or (alpha shl 24),
-                    anchorTop = WeTypeSettings.getGestureLabelPositionXposed() ==
-                        WeTypeSettings.GESTURE_LABEL_POSITION_TOP,
+                    verticalPosition = WeTypeSettings.getGestureLabelPositionXposed()
+                        .coerceIn(
+                            WeTypeSettings.GESTURE_LABEL_POSITION_BOTTOM,
+                            WeTypeSettings.GESTURE_LABEL_POSITION_TOP
+                        ),
                     marginLeftPx = WeTypeSettings.getGestureLabelMarginLeftDpXposed()
-                        .coerceIn(0, 24) * density,
+                        .coerceIn(
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                        ) * density,
                     marginTopPx = WeTypeSettings.getGestureLabelMarginTopDpXposed()
-                        .coerceIn(0, 24) * density,
+                        .coerceIn(
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                        ) * density,
                     marginRightPx = WeTypeSettings.getGestureLabelMarginRightDpXposed()
-                        .coerceIn(0, 24) * density,
+                        .coerceIn(
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                        ) * density,
                     marginBottomPx = WeTypeSettings.getGestureLabelMarginBottomDpXposed()
-                        .coerceIn(0, 24) * density
+                        .coerceIn(
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MIN_DP,
+                            WeTypeSettings.GESTURE_LABEL_MARGIN_MAX_DP
+                        ) * density
                 )
             }
 
