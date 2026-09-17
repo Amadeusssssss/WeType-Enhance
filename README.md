@@ -163,6 +163,7 @@
 - 上游项目：[NEORUAA/WeType_UI_Enhanced](https://github.com/NEORUAA/WeType_UI_Enhanced)，感谢原作者打下界面美化与 MIUI 解锁的基础。
 - [MIUI_IME_Unlock (MIT)](https://github.com/RC1844/MIUI_IME_Unlock)：MIUI 全面屏优化限制的解锁实现。
 - [miuix](https://github.com/compose-miuix-ui/miuix)：设置页使用的 Compose UI 组件库。
+- [@xu-qian123](https://github.com/xu-qian123)：指出宿主 `selfdraw` 绘制上下文把键帽矩形暴露为 `t()` / `getDrawRect` getter（与 hitRect 字段分开），本项目的键帽定位改用按名解析即源于此（#1）。
 
 ## 开源许可
 
