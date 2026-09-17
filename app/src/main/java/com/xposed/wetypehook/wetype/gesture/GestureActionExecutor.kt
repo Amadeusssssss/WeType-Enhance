@@ -13,11 +13,9 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
+import com.xposed.wetypehook.wetype.hook.WeTypePanelSwitcher
 import com.xposed.wetypehook.xposed.Log
 import java.lang.ref.WeakReference
-import java.lang.reflect.Field
-import java.lang.reflect.Method
-import java.lang.reflect.Modifier
 
 /**
  * 手势动作全量执行器
@@ -363,54 +361,31 @@ object GestureActionExecutor {
     }
 
     /**
-     * 键盘面板拉起 (剪贴板 panelId=4, 常用语 panelId=8, 找字)
+     * 键盘面板拉起 (剪贴板 / 常用语 / 手写找字)
+     *
+     * 走宿主面板管理器的 `(int, Bundle) -> void` 切换入口（与键盘「＋面板」同契约）。
+     * 入口方法名在 WeType 3.5.3/3.5.4 之间会漂移，具体绑定见 [WeTypePanelSwitcher]。
+     * 剪贴板与常用语共用 `CustomPhraseAndClipboard`，用 `target_tab_index` 分流；
+     * 找字按当前键盘形态走 T9 / T26。
      */
     private fun handleOpenPanel(view: View, action: GestureAction) {
-        val targetPanelId = when (action) {
-            GestureAction.OpenClipboard -> 4
-            GestureAction.OpenQuickPhrase -> 8
-            GestureAction.OpenFindWord -> 21
-            else -> return
-        }
-
-        runCatching {
-            val rootView = view.rootView ?: return
-            // 递归或从常见子视图中查找包含 showPanel / setPanelType 的控制器
-            val panelController = findPanelController(rootView)
-            if (panelController != null) {
-                invokeShowPanel(panelController, view, targetPanelId)
-                Log.i("[$TAG] Opened panel $targetPanelId via controller")
-            } else {
-                Log.i("[$TAG] Panel controller not found, attempting fallback")
+        val classLoader = view.javaClass.classLoader ?: return
+        val ok = runCatching {
+            when (action) {
+                GestureAction.OpenClipboard -> WeTypePanelSwitcher.openClipboard(classLoader)
+                GestureAction.OpenQuickPhrase -> WeTypePanelSwitcher.openCustomPhrase(classLoader)
+                GestureAction.OpenFindWord ->
+                    WeTypePanelSwitcher.openFindWord(classLoader, WeTypePanelSwitcher.isT9KeyboardView(view))
+                else -> false
             }
         }.onFailure {
-            Log.e("[$TAG] Failed to open panel: ${it.message}")
-        }
-    }
+            Log.e("[$TAG] Failed to open panel for $action: ${it.message}")
+        }.getOrDefault(false)
 
-    private fun findPanelController(rootView: View): Any? {
-        // 查找持有面板控制引用的 tag 或字段
-        return rootView.tag ?: runCatching {
-            val field = rootView.javaClass.declaredFields.firstOrNull {
-                it.type.name.startsWith("com.tencent.wetype.plugin.hld")
-            }
-            field?.isAccessible = true
-            field?.get(rootView)
-        }.getOrNull()
-    }
-
-    private fun invokeShowPanel(controller: Any, view: View, panelId: Int) {
-        val methods = controller.javaClass.declaredMethods
-        val showMethod = methods.firstOrNull { it.name == "showPanel" || (it.parameterTypes.size == 2 && it.parameterTypes[0] == Int::class.javaPrimitiveType) }
-            ?: methods.firstOrNull { it.parameterTypes.size == 1 && View::class.java.isAssignableFrom(it.parameterTypes[0]) }
-
-        if (showMethod != null) {
-            showMethod.isAccessible = true
-            if (showMethod.parameterTypes.size == 2) {
-                showMethod.invoke(controller, panelId, view)
-            } else {
-                showMethod.invoke(controller, view)
-            }
+        if (ok) {
+            Log.i("[$TAG] Opened panel for ${action.title}")
+        } else {
+            Log.e("[$TAG] Panel switch rejected for ${action.title}")
         }
     }
 }
