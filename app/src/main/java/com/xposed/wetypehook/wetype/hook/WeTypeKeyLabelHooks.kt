@@ -17,6 +17,7 @@ import com.xposed.wetypehook.wetype.settings.WeTypeGestureSettings
 import com.xposed.wetypehook.wetype.settings.WeTypeSettings
 import com.xposed.wetypehook.xposed.Log
 import com.xposed.wetypehook.xposed.hookAfter
+import com.xposed.wetypehook.xposed.hookBefore
 import org.luckypray.dexkit.DexKitBridge
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -29,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * 定位：宿主 `com.tencent.wetype.plugin.hld.keyboard.selfdraw.drawmethod` 包下
  * `void (Canvas, selfdraw.*)` 单键绘制方法，hookAfter 用同一 Canvas 把绑定动作短名
- * 画在按键上。View/Rect 字段运行时按类型发现（抗宿主混淆更名）。
+ * 画在按键上。View 字段按类型发现，键帽矩形优先按名取 getter、退回几何推导（抗宿主混淆更名）。
  * 取键/密码抑制/手写抑制/按字数缩放等语义与原版一致；定位与颜色走本模块设置。
  */
 internal object WeTypeKeyLabelHooks {
@@ -39,10 +40,21 @@ internal object WeTypeKeyLabelHooks {
     private const val DRAW_CONTEXT_PACKAGE = "com.tencent.wetype.plugin.hld.keyboard.selfdraw."
     private const val CANVAS_CLASS = "android.graphics.Canvas"
 
+    /**
+     * 键帽 getter 的候选名，按可靠性排序。
+     *
+     * `t()` 是实测（3.5.3 / 3.5.4 双版本核对）返回**键帽**的那个；`getDrawRect` 是
+     * 语义名，命中即用。两者都是无参返回 Rect 的实例方法，与下面的
+     * [resolveKeyCapRect] 几何推导互为兜底：名字变了走推导，推导解不开走名字。
+     */
+    private val DRAW_RECT_GETTER_NAMES = listOf("getDrawRect", "t")
+
     private data class KeyDrawAccess(
         val viewField: Field,
         /** 绘制上下文里可能有多个矩形，运行时再区分格子与内容块。 */
-        val rectFields: List<Field>
+        val rectFields: List<Field>,
+        /** 按名解析到的键帽 getter；宿主改字段顺序时它是唯一稳的来源。 */
+        val drawRectGetter: Method?
     )
 
     private data class LabelPaintStyle(
@@ -65,6 +77,29 @@ internal object WeTypeKeyLabelHooks {
     private var cachedBindings: Map<Char, GestureAction> = emptyMap()
 
     private var keyDataMethod: Method? = null
+
+    /**
+     * 当前线程上嵌套的单键绘制层数，由 hookBefore/hookAfter 配对维护。
+     *
+     * 宿主画一个键会嵌套调用多个 drawmethod 方法（实测 3.5.3/3.5.4：最外层
+     * `c#a` 内部再调 `c#e`/`e#b`/`c#f`/`c#g`），而 hookAfter 是**方法返回后**触发，
+     * 于是同一个键在同一帧里被连着报 5 次。标签是半透明的（默认 alpha 153/255≈60%），
+     * 叠 5 层后有效不透明度约 99% —— 用户把透明度拉低也看不出变化。
+     *
+     * 只让最外层那次（最先进入、最后退出）真正落笔，把标签拉回设定的透明度。
+     * 5 次调用算出的 x/y 完全相同，所以留下最外层与当前可见**位置**一致，差别只在
+     * 谁最后落笔：最外层在子绘制之后才画，标签压在最上面，不会被按键内容盖住。
+     */
+    private val drawNesting = ThreadLocal.withInitial { 0 }
+
+    /**
+     * 嵌套层数的自愈上限。实测深 5 层，留出余量。
+     *
+     * 宿主方法抛异常时配对的 hookAfter 不会触发（compat 层的 after 里 `chain.proceed()`
+     * 先于回调，抛了就跳过），计数器会永久泄漏在本线程上，之后所有 `remaining != 0`，
+     * 标签在本线程再也画不出来 —— 而且完全静默。超过这个上限必然是泄漏，就地复位。
+     */
+    private const val MAX_PLAUSIBLE_DRAW_NESTING = 16
 
     fun install(sourceDir: String?, classLoader: ClassLoader) {
         if (sourceDir.isNullOrEmpty()) {
@@ -96,8 +131,22 @@ internal object WeTypeKeyLabelHooks {
                     return
                 }
                 targets.forEach { method ->
+                    method.hookBefore {
+                        val depth = drawNesting.get() + 1
+                        if (depth > MAX_PLAUSIBLE_DRAW_NESTING) {
+                            // 只可能是上一轮泄漏，复位而不是继续累加。
+                            Log.e("[$TAG] draw nesting leaked to $depth; resetting")
+                            drawNesting.set(1)
+                        } else {
+                            drawNesting.set(depth)
+                        }
+                    }
                     method.hookAfter { param ->
-                        drawKeyLabel(param.args.getOrNull(0), param.args.getOrNull(1))
+                        val remaining = (drawNesting.get() - 1).coerceAtLeast(0)
+                        drawNesting.set(remaining)
+                        if (remaining == 0) {
+                            drawKeyLabel(param.args.getOrNull(0), param.args.getOrNull(1))
+                        }
                     }
                 }
                 Log.i("[$TAG] Hooked ${targets.size} single-key draw methods")
@@ -301,8 +350,9 @@ internal object WeTypeKeyLabelHooks {
             }
             search = search.superclass
         }
-        val access = if (viewField != null && rectFields.isNotEmpty()) {
-            KeyDrawAccess(viewField, rectFields)
+        val drawRectGetter = resolveDrawRectGetter(clazz)
+        val access = if (viewField != null && (drawRectGetter != null || rectFields.isNotEmpty())) {
+            KeyDrawAccess(viewField, rectFields, drawRectGetter)
         } else {
             null
         }
@@ -310,7 +360,8 @@ internal object WeTypeKeyLabelHooks {
         if (access != null) {
             Log.i(
                 "[$TAG] Resolved draw context ${clazz.name}: " +
-                    "view=${viewField?.name} rects=${rectFields.joinToString { it.name }}"
+                    "view=${viewField?.name} rects=${rectFields.joinToString { it.name }} " +
+                    "drawRect=${drawRectGetter?.name ?: "none"}"
             )
         } else {
             Log.e("[$TAG] Failed to resolve View/Rect fields in ${clazz.name}")
@@ -319,17 +370,52 @@ internal object WeTypeKeyLabelHooks {
     }
 
     /**
-     * 挑出**键帽**矩形。绘制上下文里有多个矩形，最外层的那个是宿主分配给这个键的**格子**
-     * （含不等宽的左右 padding：Q 左 13 右 8、W 左右各 7、Z 左 18 右 8…），里层的是按键
-     * 真正画出来的**键帽**（尺寸等于 `KeyData.width/height`，同一排的字母键完全一致）。
+     * 按名找键帽 getter。找不到返回 null，由 [resolveKeyCapRect] 的几何推导接手。
      *
-     * 判据：被别的矩形包住、且更窄的那个就是键帽。识别不出来时退回第一个矩形，保持只有
-     * 单个矩形字段的宿主版本行为不变。
+     * 不用 `getDeclaredMethod` 而是扫 declaredMethods，是为了不依赖方法名的可见性；
+     * 只收无参、返回 Rect、非静态的实例方法，避免碰到 `t(Rect)` 之类的重载。
+     */
+    private fun resolveDrawRectGetter(clazz: Class<*>): Method? {
+        var search: Class<*>? = clazz
+        while (search != null && search != Any::class.java) {
+            for (name in DRAW_RECT_GETTER_NAMES) {
+                val method = search.declaredMethods.firstOrNull { candidate ->
+                    candidate.name == name &&
+                        candidate.returnType == Rect::class.java &&
+                        candidate.parameterCount == 0 &&
+                        !Modifier.isStatic(candidate.modifiers) &&
+                        !Modifier.isAbstract(candidate.modifiers)
+                } ?: continue
+                runCatching { method.isAccessible = true }
+                return method
+            }
+            search = search.superclass
+        }
+        return null
+    }
+
+    /**
+     * 挑出**键帽**矩形，两级来源。
+     *
+     * 一级：按名取 getter（见 [DRAW_RECT_GETTER_NAMES]）。名字是宿主自己给的语义，
+     * 字段顺序、矩形增删都动不了它 —— 这是抗漂移的主路径。实测 3.5.3/3.5.4 上
+     * `t()` 与下面几何推导选中的矩形逐键一致（Z/X/C/Q 都核对过）。
+     *
+     * 二级：几何推导兜底，供 getter 改名或不存在时用。绘制上下文里最外层的矩形是
+     * 宿主分配给这个键的**格子**（含不等宽的左右 padding：Q 左 13 右 8、W 左右各 7、
+     * Z 左 18 右 8…），里层被它包住、且更窄的才是真正画出来的**键帽**。
+     * 识别不出来时退回第一个矩形，保持只有单个矩形字段的宿主版本行为不变。
      *
      * 曾经直接用第一个矩形，结果每个键按自己的 padding 差值偏移——Z 偏 5px、X 偏 4px、
      * C 偏 3px、Q 偏 2.5px，就是肉眼看到的"全选没对齐"。
      */
     private fun resolveKeyCapRect(access: KeyDrawAccess, drawCtx: Any): Rect? {
+        // 一级：getter 取的键帽可能是空矩形（未布局的键），此时不能直接采信，
+        // 但也不该退回推导——空就是空，画上去也是错位。交由调用方按 isEmpty 丢弃。
+        access.drawRectGetter?.let { getter ->
+            val rect = runCatching { getter.invoke(drawCtx) as? Rect }.getOrNull()
+            if (rect != null && !rect.isEmpty) return rect
+        }
         val rects = access.rectFields.mapNotNull { field ->
             runCatching { field.get(drawCtx) as? Rect }.getOrNull()?.takeIf { !it.isEmpty }
         }

@@ -97,6 +97,55 @@ class GestureLabelPositionTest {
             "绘制上下文的矩形字段必须全部收集，不能再只取第一个",
             hooks.contains("val rectFields = mutableListOf<Field>()")
         )
+        assertTrue(
+            "getter 改名后推导必须还在，作兜底",
+            hooks.contains("access.rectFields.mapNotNull")
+        )
+    }
+
+    /**
+     * 键帽矩形的一级来源必须按**名**取 getter，不能只靠字段顺序或几何推导。
+     * 实测（3.5.3/3.5.4 双版本逐键核对）宿主 `selfdraw.j` 上是 `l` 字段 / `t()` 方法，
+     * 两者选中的矩形与几何推导一致；名字是宿主自己的语义，字段顺序变了也动不了它。
+     */
+    @Test fun keyCapRectPrefersNamedGetterOverFieldOrder() {
+        assertTrue(
+            "候选 getter 名必须收敛在命名常量里",
+            hooks.contains("DRAW_RECT_GETTER_NAMES = listOf(\"getDrawRect\", \"t\")")
+        )
+        assertTrue(
+            "必须真的去解析并调用 getter",
+            hooks.contains("resolveDrawRectGetter(clazz)")
+        )
+        assertTrue(
+            "getter 取的矩形要经 isEmpty 过滤，空矩形不能当位置用",
+            hooks.contains("if (rect != null && !rect.isEmpty) return rect")
+        )
+        assertTrue(
+            "getter 缺失时 [KeyDrawAccess] 仍要能用推导建起来",
+            hooks.contains("viewField != null && (drawRectGetter != null || rectFields.isNotEmpty())")
+        )
+    }
+
+    /**
+     * 宿主单键绘制是嵌套的（最外层 `c#a` 内部再调 `c#e`/`e#b`/`c#f`/`c#g`），
+     * 而 hookAfter 是返回后触发，同一帧同一个键会被连报 5 次。标签半透明
+     * （默认 alpha 153/255≈60%），叠 5 层后有效不透明度约 99%，透明度设置等于失效。
+     * 必须只让最外层那次落笔。
+     */
+    @Test fun nestedKeyDrawOnlyPaintsOncePerFrame() {
+        assertTrue(
+            "嵌套计数必须走 hookBefore/hookAfter 配对",
+            hooks.contains("method.hookBefore {") && hooks.contains("drawNesting.set(")
+        )
+        assertTrue(
+            "只有退回到最外层才画",
+            hooks.contains("if (remaining == 0) {")
+        )
+        assertTrue(
+            "计数器必须是每线程独立的，绘制可能发生在不同线程",
+            hooks.contains("ThreadLocal.withInitial { 0 }")
+        )
     }
 
     /**

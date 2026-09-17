@@ -53,6 +53,11 @@ object WeTypeAppearanceColorGroups {
                 "ime_color_14_Alpha_30", "ime_color_14_Alpha_30_light",
                 "ime_color_14_Alpha_50_dark", "ime_color_14_Alpha_50_light",
                 "ime_color_14_dark", "ime_color_14_light",
+                // 自绘键盘（S34 滑动选词等）右上角动作钮「前往」的底色：宿主用
+                // Bb.c.f(q1.o(context, ime_skin_key_green_color)) 现取现画成圆角实心块
+                // （3.5.3=AbstractC0781l、3.5.4=AbstractC2016l，字段名两版一致），
+                // 与 ime_skin_color_14（面板标题/正文色，非品牌绿）是两套资源，必须单独列。
+                "ime_skin_key_green_color", "ime_skin_dark_key_green_color",
                 "ime_skin_candidate_content_select_bg_color", "ime_skin_color_14", "ime_skin_color_14_Alpha_20",
                 "ime_skin_color_14_Alpha_50", "ime_skin_color_19", "ime_skin_color_btn_white_text",
                 "ime_skin_color_btn_white_text_pressed", "ime_skin_color_divider", "ime_skin_color_emoji_enter_btn_bg_disabled", "ime_skin_dark_Brand_90",
