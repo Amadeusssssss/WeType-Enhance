@@ -254,6 +254,32 @@ object WeTypeSettings {
     private var remotePreferences: SharedPreferences? = null
 
     /**
+     * 模块 App 是否真的作为一个包存在。
+     *
+     * ## 为什么要问这个
+     *
+     * 设置页（`com.tencent.wetype` 主进程）保存后会走 [sendSnapshotToModule]，把快照广播给
+     * `com.xposed.wetypehook` 的 [ModuleBridgeContract] 接收器。这条路径成立的前提是
+     * **模块 App 被安装成了独立包**（LSPosed 作用域模式）。
+     *
+     * 但 **LSPatch 内嵌模式**下模块是被塞进微信输入法内部加载的，`com.xposed.wetypehook`
+     * 这个包根本不存在。广播发给一个不存在的组件 → 永远等不到 ACK → 5 秒超时被判成
+     * `accepted = false` → 设置页弹出「无法保存设置」。
+     *
+     * 而实际上**本地早已写好了**，重启输入法进程后照样生效。弹窗在撒谎。
+     *
+     * 文案没写错，它说的不是"本地没写进去"，是"没同步到模块 App"。
+     * 只是内嵌模式下这个同步本来就不存在，它没有失败 —— 它**不适用**。
+     *
+     * 故此处先探一次包是否存在，不存在就直接跳过桥接，把 [sendSnapshotToModule] 的
+     * 5 秒超时和那条误导性文案一起省掉。
+     */
+    private fun isModulePackagePresent(context: Context): Boolean = runCatching {
+        context.packageManager.getPackageInfo(MODULE_PACKAGE_NAME, 0)
+        true
+    }.getOrDefault(false)
+
+    /**
      * 宿主进程内重新解析远端偏好（模块 App 偏好）的入口。热重载被拒绝/服务短暂不可用时
      * `remotePreferences` 会被解绑，若无此入口则所有颜色读取会回退默认值（强调色变绿 #23C891）。
      */
@@ -583,12 +609,21 @@ object WeTypeSettings {
         val remoteSnapshot = remotePreferences?.toSnapshotOrNull()
         val hostSyncPending = localPreferences.getBoolean(KEY_HOST_SYNC_PENDING, false)
 
+        // LSPatch 内嵌模式：没有模块 App 可广播，也没有"另一个进程"需要靠桥接去戳。
+        // 本地那份就是唯一事实来源，直接采信并清掉待同步标记，别让每一次
+        // ensureHostSnapshot 都白发一次注定超时的广播（每次白等 5 秒）。
+        val bridgeApplicable = isModulePackagePresent(appContext)
+
         when {
             hostSyncPending && localSnapshot != null -> {
                 cachedXposedSnapshot = localSnapshot
-                val revision = localPreferences.getLong(KEY_HOST_SYNC_REVISION, 0L)
-                sendSnapshotToModule(appContext, localSnapshot, revision) { accepted ->
-                    acknowledgeHostSnapshot(appContext, revision, accepted)
+                if (!bridgeApplicable) {
+                    localPreferences.edit().putBoolean(KEY_HOST_SYNC_PENDING, false).commit()
+                } else {
+                    val revision = localPreferences.getLong(KEY_HOST_SYNC_REVISION, 0L)
+                    sendSnapshotToModule(appContext, localSnapshot, revision) { accepted ->
+                        acknowledgeHostSnapshot(appContext, revision, accepted)
+                    }
                 }
             }
 
@@ -599,14 +634,18 @@ object WeTypeSettings {
 
             localSnapshot != null -> {
                 cachedXposedSnapshot = localSnapshot
-                val revision = nextHostRevision(localPreferences)
-                val staged = localPreferences.edit()
-                    .putBoolean(KEY_HOST_SYNC_PENDING, true)
-                    .putLong(KEY_HOST_SYNC_REVISION, revision)
-                    .commit()
-                if (staged) {
-                    sendSnapshotToModule(appContext, localSnapshot, revision) { accepted ->
-                        acknowledgeHostSnapshot(appContext, revision, accepted)
+                if (!bridgeApplicable) {
+                    localPreferences.edit().putBoolean(KEY_HOST_SYNC_PENDING, false).commit()
+                } else {
+                    val revision = nextHostRevision(localPreferences)
+                    val staged = localPreferences.edit()
+                        .putBoolean(KEY_HOST_SYNC_PENDING, true)
+                        .putLong(KEY_HOST_SYNC_REVISION, revision)
+                        .commit()
+                    if (staged) {
+                        sendSnapshotToModule(appContext, localSnapshot, revision) { accepted ->
+                            acknowledgeHostSnapshot(appContext, revision, accepted)
+                        }
                     }
                 }
             }
@@ -1163,6 +1202,18 @@ object WeTypeSettings {
                 return false
             }
             cachedXposedSnapshot = snapshot
+            if (!isModulePackagePresent(appContext)) {
+                // LSPatch 内嵌模式：没有模块 App 可广播。本地已经写好了，而且既然没有
+                // "另一个进程"，也就不存在需要靠桥接去戳的那份副本 —— 直接把待同步标记
+                // 清掉，免得每次 ensureHostSnapshot 都白发一次注定超时的广播。
+                localPreferences.edit().putBoolean(KEY_HOST_SYNC_PENDING, false).commit()
+                AndroidLog.i(
+                    TAG,
+                    "Module app is not installed (LSPatch embed); snapshot kept locally, skipping bridge"
+                )
+                onPersisted(true)
+                return true
+            }
             sendSnapshotToModule(appContext, snapshot, revision) { accepted ->
                 acknowledgeHostSnapshot(appContext, revision, accepted)
                 onPersisted(accepted)

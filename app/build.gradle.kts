@@ -80,4 +80,6 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     // 上游 HostPreferencesFileTest 在 JVM 单测需要 XmlPullParser 实现
     testImplementation("net.sf.kxml:kxml2:2.3.0")
+    // android.jar 里的 org.json 在 JVM 单测是空壳（not mocked），手势绑定解析测试需要真实实现
+    testImplementation("org.json:json:20240303")
 }
