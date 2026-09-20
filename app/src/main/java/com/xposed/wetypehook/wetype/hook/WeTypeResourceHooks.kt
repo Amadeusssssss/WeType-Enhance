@@ -503,6 +503,7 @@ internal object WeTypeResourceHooks {
                 TypedValue::class.java,
                 Boolean::class.javaPrimitiveType
             ).hookAfter { param ->
+                if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookAfter
                 if (param.result != true) return@hookAfter
                 val attrResId = param.args[0] as? Int ?: return@hookAfter
                 val role = keyAttrRoles[attrResId] ?: return@hookAfter
@@ -537,6 +538,7 @@ internal object WeTypeResourceHooks {
             val keyDataClass = loadClassOrNull(KEY_DATA_CLASS)
                 ?: error("Failed to load KeyData")
             keyDataClass.getMethod("getBgCorner").hookAfter { param ->
+                if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookAfter
                 // KeyData.getBgCorner() returns a nullable Float; force it to the configured value so
                 // every key (and the host's null-default fallback) uses the same corner radius. The
                 // stored value is the real radius in dp, while bgCorner renders ~10dp smaller than its
@@ -573,6 +575,7 @@ internal object WeTypeResourceHooks {
     fun hookCandidateSpecialTextColor() {
         runCatching {
             resolveCandidateSpecialTextColorMethod().hookAfter { param ->
+                if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookAfter
                 param.result = WeTypeSettings.getAppearanceColorXposed("theme_color")
             }
             Log.i("Success: Hook candidate special text color")
@@ -591,6 +594,7 @@ internal object WeTypeResourceHooks {
             )
             if (cornerSetter != null) {
                 cornerSetter.hookBefore { param ->
+                    if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookBefore
                     param.args[0] = WeTypeSettings.getCandidateBackgroundCornerXposed().roundToInt()
                 }
             } else {
@@ -600,6 +604,7 @@ internal object WeTypeResourceHooks {
                     it.isAccessible = true
                 }
                 resolveCandidateBackgroundDrawMethod(candidateViewClass).hookBefore { param ->
+                    if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookBefore
                     legacyCornerField.setInt(
                         param.thisObject,
                         WeTypeSettings.getCandidateBackgroundCornerXposed().roundToInt()
@@ -626,6 +631,7 @@ internal object WeTypeResourceHooks {
             }
             colorMethods.forEach { method ->
                 method.hookAfter { param ->
+                    if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookAfter
                     val color = param.result as? Int ?: return@hookAfter
                     if (Color.alpha(color) == 0) return@hookAfter
                     param.result = withForcedAlpha(
@@ -992,6 +998,7 @@ internal object WeTypeResourceHooks {
                 "setBackground",
                 Drawable::class.java
             ).hookBefore { param ->
+                if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookBefore
                 val view = param.thisObject as? View ?: return@hookBefore
                 if (view.id != containerId) return@hookBefore
                 val drawable = param.args[0] as? Drawable ?: return@hookBefore
@@ -1001,6 +1008,7 @@ internal object WeTypeResourceHooks {
                 "setBackgroundDrawable",
                 Drawable::class.java
             ).hookBefore { param ->
+                if (!WeTypeSettings.isBeautificationEnabledXposed()) return@hookBefore
                 val view = param.thisObject as? View ?: return@hookBefore
                 if (view.id != containerId) return@hookBefore
                 val drawable = param.args[0] as? Drawable ?: return@hookBefore
@@ -1136,7 +1144,7 @@ internal object WeTypeResourceHooks {
         val baseLeftPaddingPx = candidateItemRootBaseLeftPaddingPx[itemRoot] ?: 0
         val context = runCatching { contextMethod.invoke(itemRoot) as? Context }.getOrNull()
             ?: return
-        val targetLeftPaddingPx = baseLeftPaddingPx + if (position == 0) {
+        val targetLeftPaddingPx = baseLeftPaddingPx + if (position == 0 && WeTypeSettings.isBeautificationEnabledXposed()) {
             resolveCandidateBackgroundLeftMarginPx(context)
         } else {
             0
@@ -1244,6 +1252,18 @@ internal object WeTypeResourceHooks {
                 ViewPadding(view.paddingStart, view.paddingTop, view.paddingEnd, view.paddingBottom)
             )
         }
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+            val original = synchronized(candidatePinyinOriginalPaddings) { candidatePinyinOriginalPaddings[view] }
+            if (original != null && view.paddingStart != original.start) {
+                view.setPaddingRelative(
+                    original.start,
+                    view.paddingTop,
+                    view.paddingEnd,
+                    view.paddingBottom
+                )
+            }
+            return
+        }
         val startPadding = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_DIP,
             WeTypeSettings.getCandidatePinyinLeftMarginDpXposed().toFloat(),
@@ -1335,7 +1355,7 @@ internal object WeTypeResourceHooks {
         colorResId: Int,
         staticColorReplacements: Map<Int, Int>,
         dynamicColorReplacements: Map<Int, WeTypeAppearanceColorGroup>
-    ): Boolean = isTargetColorResource(
+    ): Boolean = WeTypeSettings.isBeautificationEnabledXposed() && isTargetColorResource(
         colorResId,
         staticColorReplacements,
         dynamicColorReplacements
@@ -1346,7 +1366,7 @@ internal object WeTypeResourceHooks {
         typedValue: TypedValue,
         staticColorReplacements: Map<Int, Int>,
         dynamicColorReplacements: Map<Int, WeTypeAppearanceColorGroup>
-    ): Boolean = isTargetWeTypeTypedValue(
+    ): Boolean = WeTypeSettings.isBeautificationEnabledXposed() && isTargetWeTypeTypedValue(
         resources,
         typedValue,
         staticColorReplacements,
@@ -1421,6 +1441,7 @@ internal object WeTypeResourceHooks {
         typedValue: TypedValue,
         resolvedThemeAttrs: Map<Int, WeTypeAppearanceColorGroup>
     ): Boolean {
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) return false
         val group = resolvedThemeAttrs[attrResId] ?: return false
         val replacementColor = resolvedGroupColor(group, typedValue.data)
         typedValue.type = when (Color.alpha(replacementColor)) {
@@ -1440,6 +1461,7 @@ internal object WeTypeResourceHooks {
         color: Int,
         resolvedThemeAttrs: Map<Int, WeTypeAppearanceColorGroup>
     ): Int? {
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) return null
         val attrIds = typedArrayAttributeCache[typedArray] ?: return null
         val attrResId = attrIds.getOrNull(index) ?: return null
         val group = resolvedThemeAttrs[attrResId] ?: return null

@@ -487,6 +487,7 @@ private fun WeTypeSettingsScreen(
         appearanceGroups.filterNot { it.isKeyColorGroup }
     }
 
+    var beautificationEnabled by rememberSaveable { mutableStateOf(snapshot.beautificationEnabled) }
     var lightColor by rememberSaveable { mutableIntStateOf(snapshot.lightColor) }
     var darkColor by rememberSaveable { mutableIntStateOf(snapshot.darkColor) }
     var blurRadius by rememberSaveable { mutableIntStateOf(snapshot.blurRadius) }
@@ -746,6 +747,7 @@ private fun WeTypeSettingsScreen(
             toolbarIconBgOpacity = toolbarIconBgOpacity,
             appearanceColors = currentAppearanceColors(),
             disableHotUpdate = disableHotUpdate,
+            beautificationEnabled = beautificationEnabled,
             showCrossDeviceClipboard = showCrossDeviceClipboard,
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
@@ -813,6 +815,7 @@ private fun WeTypeSettingsScreen(
         candidatePinyinLeftMarginDp = WeTypeSettings.DEFAULT_CANDIDATE_PINYIN_LEFT_MARGIN_DP.toString()
         toolbarIconBgOpacity = WeTypeSettings.DEFAULT_TOOLBAR_ICON_BG_OPACITY
         disableHotUpdate = WeTypeSettings.DEFAULT_DISABLE_HOT_UPDATE
+        beautificationEnabled = WeTypeSettings.DEFAULT_BEAUTIFICATION_ENABLED
         showCrossDeviceClipboard = WeTypeSettings.DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD
         removeClipboardRetentionLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT
         removeClipboardTextLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT
@@ -1015,7 +1018,9 @@ private fun WeTypeSettingsScreen(
                         candidateBackgroundAlpha = candidateBackgroundAlpha,
                         onCandidateBackgroundAlphaChange = { candidateBackgroundAlpha = it },
                         candidateBackgroundCorner = candidateBackgroundCorner,
-                        onCandidateBackgroundCornerChange = { candidateBackgroundCorner = it }
+                        onCandidateBackgroundCornerChange = { candidateBackgroundCorner = it },
+                        beautificationEnabled = beautificationEnabled,
+                        onBeautificationEnabledChange = { beautificationEnabled = it }
                     )
                 }
 
@@ -1316,8 +1321,25 @@ private fun LazyListScope.AppearanceTabContent(
     candidateBackgroundAlpha: Int,
     onCandidateBackgroundAlphaChange: (Int) -> Unit,
     candidateBackgroundCorner: Int,
-    onCandidateBackgroundCornerChange: (Int) -> Unit
+    onCandidateBackgroundCornerChange: (Int) -> Unit,
+    beautificationEnabled: Boolean,
+    onBeautificationEnabledChange: (Boolean) -> Unit
 ) {
+    // 0. 界面美化总开关
+    item {
+        Card(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            insideMargin = PaddingValues(0.dp)
+        ) {
+            MiuixSwitchWidget(
+                title = "启用界面美化",
+                description = "开启键盘背景毛玻璃、按键圆角与颜色定制等界面美化功能",
+                checked = beautificationEnabled,
+                onCheckedChange = onBeautificationEnabledChange
+            )
+        }
+    }
+
     // 1. 效果预览折叠卡片（默认收起，平滑展开）
     item {
         var isPreviewExpanded by rememberSaveable { mutableStateOf(false) }

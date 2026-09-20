@@ -51,6 +51,7 @@ object WeTypeSettings {
     private const val KEY_CANDIDATE_PINYIN_LEFT_MARGIN_DP = "candidate_pinyin_left_margin_dp"
     private const val KEY_APPEARANCE_COLOR_PREFIX = "appearance_color_"
     private const val KEY_DISABLE_HOT_UPDATE = "disable_hot_update"
+    const val KEY_BEAUTIFICATION_ENABLED = "beautification_enabled"
     private const val KEY_TOOLBAR_ICON_BG_OPACITY = "toolbar_icon_bg_opacity"
     const val KEY_SHOW_CROSS_DEVICE_CLIPBOARD = "show_cross_device_clipboard"
     const val KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT = "remove_clipboard_retention_limit"
@@ -237,6 +238,7 @@ object WeTypeSettings {
     const val DEFAULT_CANDIDATE_PINYIN_LEFT_MARGIN_DP = 16
     const val DEFAULT_TOOLBAR_ICON_BG_OPACITY = 150
     const val DEFAULT_DISABLE_HOT_UPDATE = true
+    const val DEFAULT_BEAUTIFICATION_ENABLED = true
     const val DEFAULT_HYPER_MATERIAL_ENABLED = false
 
     private val legacyKeyColorDefaults = mapOf(
@@ -314,6 +316,7 @@ object WeTypeSettings {
         val appearanceColors: Map<String, Int>,
         val toolbarIconBgOpacity: Int,
         val disableHotUpdate: Boolean,
+        val beautificationEnabled: Boolean = DEFAULT_BEAUTIFICATION_ENABLED,
         val showCrossDeviceClipboard: Boolean = DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD,
         val removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         val removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
@@ -467,6 +470,8 @@ object WeTypeSettings {
     fun getGestureLabelMarginLeftDp(context: Context): Int = readSnapshot(context).gestureLabelMarginLeftDp
     fun getGestureLabelMarginRightDp(context: Context): Int = readSnapshot(context).gestureLabelMarginRightDp
 
+    fun isBeautificationEnabled(context: Context): Boolean = readSnapshot(context).beautificationEnabled
+
     fun isShowCrossDeviceClipboardXposed(): Boolean = readSnapshotXposed().showCrossDeviceClipboard
     fun isRemoveClipboardRetentionLimitXposed(): Boolean = readSnapshotXposed().removeClipboardRetentionLimit
     fun isRemoveClipboardTextLimitXposed(): Boolean = readSnapshotXposed().removeClipboardTextLimit
@@ -482,6 +487,7 @@ object WeTypeSettings {
 
     fun getClipboardImageMaxSizeMbXposed(): Int = readSnapshotXposed().clipboardImageMaxSizeMb
 
+    fun isBeautificationEnabledXposed(): Boolean = readSnapshotXposed().beautificationEnabled
     fun isQwertyGestureEnabledXposed(): Boolean = readSnapshotXposed().qwertyGestureEnabled
     fun isT9GestureEnabledXposed(): Boolean = readSnapshotXposed().t9GestureEnabled
     fun getGestureThresholdXposed(): Int = readSnapshotXposed().gestureThreshold
@@ -736,6 +742,7 @@ object WeTypeSettings {
         toolbarIconBgOpacity: Int,
         appearanceColors: Map<String, Int>,
         disableHotUpdate: Boolean = DEFAULT_DISABLE_HOT_UPDATE,
+        beautificationEnabled: Boolean = DEFAULT_BEAUTIFICATION_ENABLED,
         showCrossDeviceClipboard: Boolean = DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD,
         removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
@@ -796,6 +803,7 @@ object WeTypeSettings {
             toolbarIconBgOpacity = toolbarIconBgOpacity,
             appearanceColors = sanitizedAppearanceColors,
             disableHotUpdate = disableHotUpdate,
+            beautificationEnabled = beautificationEnabled,
             showCrossDeviceClipboard = showCrossDeviceClipboard,
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
@@ -1074,6 +1082,7 @@ object WeTypeSettings {
         toolbarIconBgOpacity: Int,
         appearanceColors: Map<String, Int>,
         disableHotUpdate: Boolean,
+        beautificationEnabled: Boolean,
         showCrossDeviceClipboard: Boolean = DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD,
         removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
@@ -1247,6 +1256,7 @@ object WeTypeSettings {
             .putInt(KEY_TOOLBAR_ICON_BG_OPACITY, snapshot.toolbarIconBgOpacity)
             .putBoolean(KEY_HYPER_MATERIAL_ENABLED, snapshot.hyperMaterialEnabled)
             .putBoolean(KEY_DISABLE_HOT_UPDATE, snapshot.disableHotUpdate)
+            .putBoolean(KEY_BEAUTIFICATION_ENABLED, snapshot.beautificationEnabled)
             .putBoolean(KEY_SHOW_CROSS_DEVICE_CLIPBOARD, snapshot.showCrossDeviceClipboard)
             .putBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, snapshot.removeClipboardRetentionLimit)
             .putBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, snapshot.removeClipboardTextLimit)
@@ -1429,6 +1439,7 @@ object WeTypeSettings {
         putInt(KEY_CANDIDATE_PINYIN_LEFT_MARGIN_DP, candidatePinyinLeftMarginDp)
         putInt(KEY_TOOLBAR_ICON_BG_OPACITY, toolbarIconBgOpacity)
         putBoolean(KEY_DISABLE_HOT_UPDATE, disableHotUpdate)
+        putBoolean(KEY_BEAUTIFICATION_ENABLED, beautificationEnabled)
         putBoolean(KEY_SHOW_CROSS_DEVICE_CLIPBOARD, showCrossDeviceClipboard)
         putBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, removeClipboardRetentionLimit)
         putBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, removeClipboardTextLimit)
@@ -1539,6 +1550,7 @@ object WeTypeSettings {
                 defaults.toolbarIconBgOpacity
             ).coerceIn(0, 255),
             disableHotUpdate = getBoolean(KEY_DISABLE_HOT_UPDATE, defaults.disableHotUpdate),
+            beautificationEnabled = getBoolean(KEY_BEAUTIFICATION_ENABLED, defaults.beautificationEnabled),
             showCrossDeviceClipboard = getBoolean(KEY_SHOW_CROSS_DEVICE_CLIPBOARD, defaults.showCrossDeviceClipboard),
             removeClipboardRetentionLimit = getBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, defaults.removeClipboardRetentionLimit),
             removeClipboardTextLimit = getBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, defaults.removeClipboardTextLimit),
@@ -1695,6 +1707,7 @@ object WeTypeSettings {
                 group.id to migrateLegacyKeyOpacity(group, color, legacyKeyOpacity)
             },
             disableHotUpdate = getBoolean(KEY_DISABLE_HOT_UPDATE, DEFAULT_DISABLE_HOT_UPDATE),
+            beautificationEnabled = getBoolean(KEY_BEAUTIFICATION_ENABLED, DEFAULT_BEAUTIFICATION_ENABLED),
             showCrossDeviceClipboard = getBoolean(KEY_SHOW_CROSS_DEVICE_CLIPBOARD, DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD),
             removeClipboardRetentionLimit = getBoolean(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT, DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT),
             removeClipboardTextLimit = getBoolean(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT, DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT),
@@ -1796,6 +1809,7 @@ object WeTypeSettings {
         toolbarIconBgOpacity = DEFAULT_TOOLBAR_ICON_BG_OPACITY,
         appearanceColors = WeTypeAppearanceColorGroups.defaultColors(),
         disableHotUpdate = DEFAULT_DISABLE_HOT_UPDATE,
+        beautificationEnabled = DEFAULT_BEAUTIFICATION_ENABLED,
         showCrossDeviceClipboard = DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD,
         removeClipboardRetentionLimit = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
         removeClipboardTextLimit = DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT,
@@ -1850,6 +1864,7 @@ object WeTypeSettings {
             contains(KEY_CANDIDATE_PINYIN_LEFT_MARGIN_DP) ||
             contains(KEY_TOOLBAR_ICON_BG_OPACITY) ||
             contains(KEY_DISABLE_HOT_UPDATE) ||
+            contains(KEY_BEAUTIFICATION_ENABLED) ||
             contains(KEY_SHOW_CROSS_DEVICE_CLIPBOARD) ||
             contains(KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT) ||
             contains(KEY_REMOVE_CLIPBOARD_TEXT_LIMIT) ||

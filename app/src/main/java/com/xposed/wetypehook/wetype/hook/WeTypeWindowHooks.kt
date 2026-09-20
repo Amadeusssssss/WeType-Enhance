@@ -457,6 +457,10 @@ internal object WeTypeWindowHooks {
         container: ViewGroup,
         visibleOverlayRoots: Set<View>
     ) {
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+            restoreCoveredUnderlays(container)
+            return
+        }
         val coveredUnderlays = findCoveredUnderlays(container)
         val rootsToRestore = mutableListOf<Pair<View, Int>>()
         val rootsToHide = mutableListOf<View>()
@@ -626,6 +630,10 @@ internal object WeTypeWindowHooks {
     }
 
     private fun hideInternalSettingUnderlay(container: ViewGroup) {
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+            restoreInternalSettingUnderlay(container)
+            return
+        }
         val underlays = buildList {
             repeat(container.childCount) { index ->
                 val child = container.getChildAt(index)
@@ -1017,6 +1025,12 @@ internal object WeTypeWindowHooks {
 
     private fun scheduleWindowBlur(inputMethodService: Any, refreshStyle: Boolean = true) {
         val state = getWindowState(inputMethodService)
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+            removeBackgroundListeners(state)
+            restoreWindowState(state)
+            removeBackgroundCarrier(state)
+            return
+        }
         if (!state.windowVisible) return
         val window = (inputMethodService as? InputMethodService)?.window?.window ?: return
         val decorView = window.decorView
@@ -1055,6 +1069,11 @@ internal object WeTypeWindowHooks {
                     val context: Context = service
                     val window = service.window?.window ?: return@runCatching true
                     val latestDecorView = window.decorView
+                    if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+                        restoreWindowState(state)
+                        removeBackgroundCarrier(state)
+                        return@runCatching true
+                    }
                     if (shouldHideBackground(latestDecorView, state)) {
                         hideBackgroundCarrier(state)
                         return@runCatching true
