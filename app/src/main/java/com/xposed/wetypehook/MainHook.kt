@@ -21,6 +21,7 @@ import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import com.xposed.wetypehook.wetype.hook.WeTypeBottomViewManager
 import com.xposed.wetypehook.wetype.hook.WeTypeClipboardHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeGestureHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeKeyLabelHooks
@@ -70,8 +71,6 @@ private const val WETYPE_ABOUT_ACTIVITY = "com.tencent.wetype.plugin.hld.ui.ImeA
 private const val WETYPE_ABOUT_LOGO_TAG_KEY = 0x4D495549
 private const val WETYPE_FONT_ASSET = "fonts/WE-Regular.ttf"
 private const val MODULE_WETYPE_FONT_ASSET = "WE-Regular.ttf"
-private const val TRANSPARENT_BOTTOM_VIEW_DARK_CONTENT = 0xFFF5F5F5.toInt()
-private const val TRANSPARENT_BOTTOM_VIEW_LIGHT_CONTENT = 0xFF202020.toInt()
 private const val TARGET_KIND_SYSTEM = "system"
 private const val TARGET_KIND_PACKAGE = "package"
 private const val TARGET_KIND_PHRASE = "phrase"
@@ -106,8 +105,6 @@ class MainHook : XposedModule() {
         ViewGroup,
         Triple<WeakReference<ViewGroup>, WeakReference<View>, WeakReference<View>>
     >()
-    private var navBarColor: Int? = null
-    private var bottomViewSourceColor: Int? = null
     private var modulePath: String? = null
     private var moduleAssetManager: AssetManager? = null
     private var assetManagerAddAssetPathMethod: Method? = null
@@ -339,13 +336,14 @@ class MainHook : XposedModule() {
         HookEnvironment.withHookScope("wetype.layout-18key") { WeTypeLayoutHooks.install(::getModuleAssetManager) }
     }
 
-    private fun installBaseImeHooks(forceTransparentBottomView: Boolean) {
+    private fun installBaseImeHooks(isWeType: Boolean) {
         val injectorClass = loadClassOrNull("android.inputmethodservice.InputMethodServiceInjector")
             ?: loadClassOrNull("android.inputmethodservice.InputMethodServiceStubImpl")
         injectorClass?.let { clazz ->
+            WeTypeBottomViewManager.injectorClass = clazz
             hookSIsImeSupport(clazz)
             hookIsXiaoAiEnable(clazz)
-            setPhraseBgColor(clazz, forceTransparentBottomView)
+            setPhraseBgColor(clazz, isWeType)
         } ?: Log.e("Failed:Class not found: InputMethodServiceInjector")
     }
 
@@ -921,8 +919,8 @@ class MainHook : XposedModule() {
         }
     }
 
-    private fun setPhraseBgColor(clazz: Class<*>, forceTransparent: Boolean) {
-        val token = classHookToken("phraseBgColor:${forceTransparent}", clazz)
+    private fun setPhraseBgColor(clazz: Class<*>, isWeType: Boolean) {
+        val token = classHookToken("phraseBgColor", clazz)
         if (!installedHookTokens.add(token)) return
 
         runCatching {
@@ -930,32 +928,48 @@ class MainHook : XposedModule() {
                 name == "setNavigationBarColor" && parameterTypes.sameAs(Int::class.java)
             }
             setNavigationBarColorMethod.hookBefore { param ->
-                if (forceTransparent) {
-                    bottomViewSourceColor = param.args[0] as? Int
+                val requestedColor = param.args[0] as? Int
+                if (requestedColor != null && requestedColor != 0 && requestedColor != Color.TRANSPARENT) {
+                    WeTypeBottomViewManager.bottomViewSourceColor = requestedColor
+                }
+                if (WeTypeBottomViewManager.shouldForceTransparent(isWeType)) {
                     param.args[0] = Color.TRANSPARENT
+                } else if (isWeType && (requestedColor == null || requestedColor == 0 || requestedColor == Color.TRANSPARENT)) {
+                    param.args[0] = WeTypeBottomViewManager.resolveEffectiveColor()
                 }
             }
             setNavigationBarColorMethod.hookAfter { param ->
-                if (forceTransparent) {
-                    navBarColor = Color.TRANSPARENT
-                    customizeBottomViewColor(clazz, true)
+                if (WeTypeBottomViewManager.shouldForceTransparent(isWeType)) {
+                    WeTypeBottomViewManager.navBarColor = Color.TRANSPARENT
+                    WeTypeBottomViewManager.applyBottomViewColor(clazz, forceTransparent = true)
                     return@hookAfter
                 }
-                if (param.args[0] == 0) return@hookAfter
-
-                navBarColor = param.args[0] as Int
-                customizeBottomViewColor(clazz, false)
+                val effectiveColor = (param.args[0] as? Int)?.takeIf { it != 0 && it != Color.TRANSPARENT }
+                    ?: WeTypeBottomViewManager.bottomViewSourceColor
+                    ?: WeTypeBottomViewManager.resolveDefaultBottomViewColor()
+                WeTypeBottomViewManager.navBarColor = effectiveColor
+                WeTypeBottomViewManager.applyBottomViewColor(clazz, forceTransparent = false)
             }
 
             clazz.findMethod { name == "customizeBottomViewColor" }.hookBefore { param ->
-                if (!forceTransparent) return@hookBefore
-                if (param.args.size > 1 && param.args[1] is Int) {
-                    param.args[1] = Color.TRANSPARENT
+                if (WeTypeBottomViewManager.shouldForceTransparent(isWeType)) {
+                    if (param.args.size > 1 && param.args[1] is Int) {
+                        param.args[1] = Color.TRANSPARENT
+                    }
+                } else {
+                    if (param.args.size > 1 && param.args[1] is Int) {
+                        val color = param.args[1] as Int
+                        if (color != 0 && color != Color.TRANSPARENT) {
+                            WeTypeBottomViewManager.bottomViewSourceColor = color
+                            WeTypeBottomViewManager.navBarColor = color
+                        }
+                    }
                 }
             }
 
             clazz.findMethod { name == "addMiuiBottomView" }.hookAfter {
-                customizeBottomViewColor(clazz, forceTransparent)
+                val forceTransparent = WeTypeBottomViewManager.shouldForceTransparent(isWeType)
+                WeTypeBottomViewManager.applyBottomViewColor(clazz, forceTransparent)
             }
         }.onFailure {
             installedHookTokens.remove(token)
@@ -963,45 +977,6 @@ class MainHook : XposedModule() {
             Log.i(it)
         }
     }
-
-    private fun customizeBottomViewColor(clazz: Class<*>, forceTransparent: Boolean) {
-        if (forceTransparent) {
-            val contentColor = resolveTransparentBottomViewContentColor()
-            clazz.invokeStaticMethodAuto(
-                "customizeBottomViewColor",
-                true,
-                Color.TRANSPARENT,
-                contentColor,
-                withAlpha(contentColor, 0x66)
-            )
-            return
-        }
-
-        navBarColor?.let { colorValue ->
-            val invertedColor = -0x1 - colorValue
-            clazz.invokeStaticMethodAuto(
-                "customizeBottomViewColor",
-                true,
-                colorValue,
-                invertedColor or -0x1000000,
-                invertedColor or 0x66000000
-            )
-        }
-    }
-
-    private fun resolveTransparentBottomViewContentColor(): Int {
-        val isDarkMode =
-            Resources.getSystem().configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
-                Configuration.UI_MODE_NIGHT_YES
-        return if (isDarkMode) TRANSPARENT_BOTTOM_VIEW_DARK_CONTENT else TRANSPARENT_BOTTOM_VIEW_LIGHT_CONTENT
-    }
-
-    private fun withAlpha(color: Int, alpha: Int): Int = Color.argb(
-        alpha.coerceIn(0, 255),
-        Color.red(color),
-        Color.green(color),
-        Color.blue(color)
-    )
 
     private fun hookDeleteNotSupportIme(className: String, classLoader: ClassLoader) {
         val token = "$className@${System.identityHashCode(classLoader)}:deleteNotSupportIme"
@@ -1297,8 +1272,7 @@ class MainHook : XposedModule() {
         miuiBottomFrameViews.clear()
         originalAboutLogoStates.clear()
         installedHookTokens.clear()
-        navBarColor = null
-        bottomViewSourceColor = null
+        WeTypeBottomViewManager.reset()
         runCatching { moduleAssetManager?.close() }
         moduleAssetManager = null
         assetManagerAddAssetPathMethod = null

@@ -1029,6 +1029,8 @@ internal object WeTypeWindowHooks {
             removeBackgroundListeners(state)
             restoreWindowState(state)
             removeBackgroundCarrier(state)
+            val window = (inputMethodService as? InputMethodService)?.window?.window
+            WeTypeBottomViewManager.reconcileBottomView(window, forceTransparent = false)
             return
         }
         if (!state.windowVisible) return
@@ -1072,6 +1074,7 @@ internal object WeTypeWindowHooks {
                     if (!WeTypeSettings.isBeautificationEnabledXposed()) {
                         restoreWindowState(state)
                         removeBackgroundCarrier(state)
+                        WeTypeBottomViewManager.reconcileBottomView(window, forceTransparent = false)
                         return@runCatching true
                     }
                     if (shouldHideBackground(latestDecorView, state)) {
@@ -1222,6 +1225,7 @@ internal object WeTypeWindowHooks {
                 window.setBackgroundBlurRadius(0)
                 window.setBackgroundDrawable(transparent)
             }
+            WeTypeBottomViewManager.reconcileBottomView(window, forceTransparent = true)
         }
 
         val overrides = if (settings.hyperMaterialEnabled && WeTypeHyperMaterial.areGlassOverridesAvailable()) {
@@ -1366,15 +1370,19 @@ internal object WeTypeWindowHooks {
     }
 
     private fun restoreWindowState(state: WeTypeWindowState) {
-        if (!state.originalWindowStateCaptured) return
-        val window = state.window?.get() ?: return
-        runCatching {
-            window.setBackgroundBlurRadius(state.originalWindowBlurRadius ?: 0)
-            window.setBackgroundDrawable(state.originalWindowBackground)
+        val window = state.window?.get()
+        if (state.originalWindowStateCaptured && window != null) {
+            runCatching {
+                window.setBackgroundBlurRadius(state.originalWindowBlurRadius ?: 0)
+                window.setBackgroundDrawable(state.originalWindowBackground)
+            }
+            state.originalWindowStateCaptured = false
+            state.originalWindowBackground = null
+            state.originalWindowBlurRadius = null
         }
-        state.originalWindowStateCaptured = false
-        state.originalWindowBackground = null
-        state.originalWindowBlurRadius = null
+        if (!WeTypeSettings.isBeautificationEnabledXposed()) {
+            WeTypeBottomViewManager.reconcileBottomView(window, forceTransparent = false)
+        }
     }
 
     private fun createBackgroundDrawable(targetView: View, context: Context, style: BackgroundStyle): Drawable {
