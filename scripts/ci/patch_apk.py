@@ -11,7 +11,7 @@ import subprocess
 import sys
 import urllib.request
 
-LSPATCH_URL = "https://github.com/LSPosed/LSPatch/releases/download/v0.6/lspatch.jar"
+LSPATCH_URL = "https://github.com/LSPosed/LSPatch/releases/download/v0.6/jar-v0.6-398-release.jar"
 UBER_SIGNER_URL = "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar"
 
 def ensure_tool(tool_path, download_url, tool_name):

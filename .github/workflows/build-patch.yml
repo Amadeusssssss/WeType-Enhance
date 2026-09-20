@@ -111,17 +111,31 @@ jobs:
             fi
           fi
 
+      - name: Download Module Artifact from triggering workflow
+        if: ${{ env.SHOULD_BUILD == 'true' && github.event_name == 'workflow_run' }}
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: module-apk
+          path: build_work/module
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Acquire Module APK
         if: ${{ env.SHOULD_BUILD == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           MODULE_TAG="${{ inputs.module_tag }}"
           echo "[*] 正在获取 WeType-Enhance 模块 APK ..."
           
-          if [ -n "$MODULE_TAG" ]; then
-            echo "[*] 从 Release $MODULE_TAG 获取模块..."
-            gh release download "$MODULE_TAG" --pattern "WeType_Enhance-*.apk" --dir build_work/module || true
+          # 如果已经通过 artifact 下载到，则无需再走 release download
+          if [ ! -f build_work/module/*.apk ]; then
+            if [ -n "$MODULE_TAG" ]; then
+              echo "[*] 从 Release $MODULE_TAG 获取模块..."
+              gh release download "$MODULE_TAG" --pattern "WeType_Enhance-*.apk" --dir build_work/module || true
+            fi
           fi
           
           # 若未获取到，尝试从最新 Release 下载
@@ -179,6 +193,7 @@ jobs:
         if: ${{ env.SHOULD_BUILD == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           TARGET_TAG="${{ inputs.module_tag }}"
           if [ -z "$TARGET_TAG" ]; then
@@ -220,3 +235,4 @@ jobs:
           git add config/official_version.json
           git commit -m "chore(version): 自动同步官方微信输入法基线版本至 $NEW_VER" || echo "配置无变动"
           git push
+

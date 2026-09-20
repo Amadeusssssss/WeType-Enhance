@@ -15,6 +15,9 @@ on:
         description: "构建成功后是否自动触发修补包构建"
         type: boolean
         default: true
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
@@ -46,7 +49,11 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           TAG="${{ inputs.release_tag }}"
           if [ -z "$TAG" ]; then
-            TAG="v$VERSION_NAME"
+            if [[ "$GITHUB_REF_NAME" =~ ^v[0-9] ]]; then
+              TAG="$GITHUB_REF_NAME"
+            else
+              TAG="v$VERSION_NAME"
+            fi
           fi
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
           echo "Detected versionName: $VERSION_NAME, Release Tag: $TAG"
@@ -92,7 +99,7 @@ jobs:
           retention-days: 7
 
       - name: Publish GitHub Release
-        if: ${{ inputs.publish_release }}
+        if: ${{ github.event_name == 'push' || inputs.publish_release }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
@@ -109,13 +116,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'build-patch.yml',
-              ref: context.ref,
-              inputs: {
-                module_tag: process.env.RELEASE_TAG,
-                force_rebuild: 'true'
-              }
-            });
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'build-patch.yml',
+                ref: 'main',
+                inputs: {
+                  module_tag: process.env.RELEASE_TAG,
+                  force_rebuild: 'true'
+                }
+              });
+              console.log('Successfully triggered build-patch.yml');
+            } catch (e) {
+              console.log('Dispatch note (workflow_run will handle automatic linkage):', e.message);
+            }
+
