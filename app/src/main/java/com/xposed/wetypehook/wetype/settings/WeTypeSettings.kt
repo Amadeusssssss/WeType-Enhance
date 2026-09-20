@@ -100,6 +100,20 @@ object WeTypeSettings {
         WeTypeGestureSettings.serialize18KeyBindings(GestureAction.default18KeyBindings)
     }
 
+    const val KEY_SPACE_SWIPE_UP_SWITCH_LANG = "space_swipe_up_switch_lang"
+    const val DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG = true
+
+    const val KEY_HIDE_ENGLISH_CANDIDATES = "hide_english_candidates"
+    const val DEFAULT_HIDE_ENGLISH_CANDIDATES = true
+
+    const val KEY_CANDIDATE_BAR_HEIGHT_DP = "candidate_bar_height_dp"
+    const val DEFAULT_CANDIDATE_BAR_HEIGHT_DP = 0
+    const val MIN_CANDIDATE_BAR_HEIGHT_DP = 24
+    const val MAX_CANDIDATE_BAR_HEIGHT_DP = 64
+
+    const val KEY_SHUANGPIN_EXPAND_PINYIN = "shuangpin_expand_pinyin"
+    const val DEFAULT_SHUANGPIN_EXPAND_PINYIN = true
+
     const val DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD = true
     const val DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT = true
     const val DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT = true
@@ -377,7 +391,11 @@ object WeTypeSettings {
         val logoImageUpdatedAt: Long = DEFAULT_LOGO_IMAGE_UPDATED_AT,
         val fontMode: Int = DEFAULT_FONT_MODE,
         val hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
-        val glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides()
+        val glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
+        val spaceSwipeUpSwitchLang: Boolean = DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG,
+        val hideEnglishCandidates: Boolean = DEFAULT_HIDE_ENGLISH_CANDIDATES,
+        val candidateBarHeightDp: Int = DEFAULT_CANDIDATE_BAR_HEIGHT_DP,
+        val shuangpinExpandPinyin: Boolean = DEFAULT_SHUANGPIN_EXPAND_PINYIN
     )
 
     fun isShowCrossDeviceClipboard(context: Context): Boolean = readSnapshot(context).showCrossDeviceClipboard
@@ -534,6 +552,15 @@ object WeTypeSettings {
     fun getGestureLabelMarginBottomDpXposed(): Int = readSnapshotXposed().gestureLabelMarginBottomDp
     fun getGestureLabelMarginLeftDpXposed(): Int = readSnapshotXposed().gestureLabelMarginLeftDp
     fun getGestureLabelMarginRightDpXposed(): Int = readSnapshotXposed().gestureLabelMarginRightDp
+
+    fun isSpaceSwipeUpSwitchLang(context: Context): Boolean = readSnapshot(context).spaceSwipeUpSwitchLang
+    fun isSpaceSwipeUpSwitchLangXposed(): Boolean = readSnapshotXposed().spaceSwipeUpSwitchLang
+    fun isHideEnglishCandidates(context: Context): Boolean = readSnapshot(context).hideEnglishCandidates
+    fun isHideEnglishCandidatesXposed(): Boolean = readSnapshotXposed().hideEnglishCandidates
+    fun getCandidateBarHeightDp(context: Context): Int = readSnapshot(context).candidateBarHeightDp
+    fun getCandidateBarHeightDpXposed(): Int = readSnapshotXposed().candidateBarHeightDp
+    fun isShuangpinExpandPinyin(context: Context): Boolean = readSnapshot(context).shuangpinExpandPinyin
+    fun isShuangpinExpandPinyinXposed(): Boolean = readSnapshotXposed().shuangpinExpandPinyin
 
     fun isLogoEnabled(context: Context): Boolean = readSnapshot(context).logoEnabled
     fun isLogoShowEnabled(context: Context): Boolean = readSnapshot(context).logoShowEnabled
@@ -818,6 +845,10 @@ object WeTypeSettings {
         fontMode: Int = DEFAULT_FONT_MODE,
         hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
         glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
+        spaceSwipeUpSwitchLang: Boolean = DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG,
+        hideEnglishCandidates: Boolean = DEFAULT_HIDE_ENGLISH_CANDIDATES,
+        candidateBarHeightDp: Int = DEFAULT_CANDIDATE_BAR_HEIGHT_DP,
+        shuangpinExpandPinyin: Boolean = DEFAULT_SHUANGPIN_EXPAND_PINYIN,
         onPersisted: (Boolean) -> Unit = {}
     ): Boolean {
         val sanitizedAppearanceColors = WeTypeAppearanceColorGroups.groups.associate { group ->
@@ -884,6 +915,10 @@ object WeTypeSettings {
             fontMode = fontMode,
             hyperMaterialEnabled = hyperMaterialEnabled,
             glassOverrides = glassOverrides,
+            spaceSwipeUpSwitchLang = spaceSwipeUpSwitchLang,
+            hideEnglishCandidates = hideEnglishCandidates,
+            candidateBarHeightDp = candidateBarHeightDp,
+            shuangpinExpandPinyin = shuangpinExpandPinyin,
             onPersisted = onPersisted
         )
     }
@@ -966,6 +1001,10 @@ object WeTypeSettings {
             fontMode = current.fontMode,
             hyperMaterialEnabled = current.hyperMaterialEnabled,
             glassOverrides = current.glassOverrides,
+            spaceSwipeUpSwitchLang = current.spaceSwipeUpSwitchLang,
+            hideEnglishCandidates = current.hideEnglishCandidates,
+            candidateBarHeightDp = current.candidateBarHeightDp,
+            shuangpinExpandPinyin = current.shuangpinExpandPinyin,
             onPersisted = onPersisted
         )
     }
@@ -1174,6 +1213,10 @@ object WeTypeSettings {
         fontMode: Int = DEFAULT_FONT_MODE,
         hyperMaterialEnabled: Boolean = DEFAULT_HYPER_MATERIAL_ENABLED,
         glassOverrides: GlassMaterialOverrides = GlassMaterialOverrides(),
+        spaceSwipeUpSwitchLang: Boolean = DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG,
+        hideEnglishCandidates: Boolean = DEFAULT_HIDE_ENGLISH_CANDIDATES,
+        candidateBarHeightDp: Int = DEFAULT_CANDIDATE_BAR_HEIGHT_DP,
+        shuangpinExpandPinyin: Boolean = DEFAULT_SHUANGPIN_EXPAND_PINYIN,
         onPersisted: (Boolean) -> Unit
     ): Boolean {
         val snapshot = Snapshot(
@@ -1240,7 +1283,11 @@ object WeTypeSettings {
             logoImageUpdatedAt = logoImageUpdatedAt.coerceAtLeast(0L),
             fontMode = fontMode.coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
             hyperMaterialEnabled = hyperMaterialEnabled,
-            glassOverrides = glassOverrides
+            glassOverrides = glassOverrides,
+            spaceSwipeUpSwitchLang = spaceSwipeUpSwitchLang,
+            hideEnglishCandidates = hideEnglishCandidates,
+            candidateBarHeightDp = candidateBarHeightDp.coerceIn(0, MAX_CANDIDATE_BAR_HEIGHT_DP),
+            shuangpinExpandPinyin = shuangpinExpandPinyin
         )
         val appContext = context.applicationContext ?: context
         val localPreferences = appPreferences(appContext)
@@ -1358,6 +1405,10 @@ object WeTypeSettings {
             .putString(KEY_LOGO_IMAGE_NAME, snapshot.logoImageName)
             .putLong(KEY_LOGO_IMAGE_UPDATED_AT, snapshot.logoImageUpdatedAt)
             .putInt(KEY_FONT_MODE, snapshot.fontMode)
+            .putBoolean(KEY_SPACE_SWIPE_UP_SWITCH_LANG, snapshot.spaceSwipeUpSwitchLang)
+            .putBoolean(KEY_HIDE_ENGLISH_CANDIDATES, snapshot.hideEnglishCandidates)
+            .putInt(KEY_CANDIDATE_BAR_HEIGHT_DP, snapshot.candidateBarHeightDp)
+            .putBoolean(KEY_SHUANGPIN_EXPAND_PINYIN, snapshot.shuangpinExpandPinyin)
             .putBoolean(KEY_KEY_OPACITY_MIGRATED, true)
             .remove(KEY_KEY_OPACITY)
         fun writeFloatParameters(key: String, values: List<Float>?, maxCount: Int) {
@@ -1546,6 +1597,10 @@ object WeTypeSettings {
         putString(KEY_LOGO_IMAGE_NAME, logoImageName)
         putLong(KEY_LOGO_IMAGE_UPDATED_AT, logoImageUpdatedAt)
         putInt(KEY_FONT_MODE, fontMode)
+        putBoolean(KEY_SPACE_SWIPE_UP_SWITCH_LANG, spaceSwipeUpSwitchLang)
+        putBoolean(KEY_HIDE_ENGLISH_CANDIDATES, hideEnglishCandidates)
+        putInt(KEY_CANDIDATE_BAR_HEIGHT_DP, candidateBarHeightDp)
+        putBoolean(KEY_SHUANGPIN_EXPAND_PINYIN, shuangpinExpandPinyin)
         putBoolean(KEY_HYPER_MATERIAL_ENABLED, hyperMaterialEnabled)
         glassOverrides.glass?.let { putFloatArray(KEY_GLASS_PARAMS, it.toFloatArray()) }
         glassOverrides.bloom?.let { putFloatArray(KEY_GLASS_BLOOM, it.toFloatArray()) }
@@ -1699,6 +1754,22 @@ object WeTypeSettings {
                 materialType = if (containsKey(KEY_GLASS_MATERIAL_TYPE)) {
                     getInt(KEY_GLASS_MATERIAL_TYPE, 0)
                 } else null
+            ),
+            spaceSwipeUpSwitchLang = getBoolean(
+                KEY_SPACE_SWIPE_UP_SWITCH_LANG,
+                defaults.spaceSwipeUpSwitchLang
+            ),
+            hideEnglishCandidates = getBoolean(
+                KEY_HIDE_ENGLISH_CANDIDATES,
+                defaults.hideEnglishCandidates
+            ),
+            candidateBarHeightDp = getInt(
+                KEY_CANDIDATE_BAR_HEIGHT_DP,
+                defaults.candidateBarHeightDp
+            ),
+            shuangpinExpandPinyin = getBoolean(
+                KEY_SHUANGPIN_EXPAND_PINYIN,
+                defaults.shuangpinExpandPinyin
             )
         )
     }
@@ -1848,7 +1919,23 @@ object WeTypeSettings {
             fontMode = getInt(KEY_FONT_MODE, DEFAULT_FONT_MODE)
                 .coerceIn(FONT_MODE_OFFICIAL, FONT_MODE_SYSTEM),
             hyperMaterialEnabled = getBoolean(KEY_HYPER_MATERIAL_ENABLED, DEFAULT_HYPER_MATERIAL_ENABLED),
-            glassOverrides = readGlassOverrides()
+            glassOverrides = readGlassOverrides(),
+            spaceSwipeUpSwitchLang = getBoolean(
+                KEY_SPACE_SWIPE_UP_SWITCH_LANG,
+                DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG
+            ),
+            hideEnglishCandidates = getBoolean(
+                KEY_HIDE_ENGLISH_CANDIDATES,
+                DEFAULT_HIDE_ENGLISH_CANDIDATES
+            ),
+            candidateBarHeightDp = getInt(
+                KEY_CANDIDATE_BAR_HEIGHT_DP,
+                DEFAULT_CANDIDATE_BAR_HEIGHT_DP
+            ),
+            shuangpinExpandPinyin = getBoolean(
+                KEY_SHUANGPIN_EXPAND_PINYIN,
+                DEFAULT_SHUANGPIN_EXPAND_PINYIN
+            )
         )
     }
 
@@ -1929,7 +2016,11 @@ object WeTypeSettings {
         logoImageSvgText = DEFAULT_LOGO_IMAGE_SVG_TEXT,
         logoImageName = DEFAULT_LOGO_IMAGE_NAME,
         logoImageUpdatedAt = DEFAULT_LOGO_IMAGE_UPDATED_AT,
-        fontMode = DEFAULT_FONT_MODE
+        fontMode = DEFAULT_FONT_MODE,
+        spaceSwipeUpSwitchLang = DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG,
+        hideEnglishCandidates = DEFAULT_HIDE_ENGLISH_CANDIDATES,
+        candidateBarHeightDp = DEFAULT_CANDIDATE_BAR_HEIGHT_DP,
+        shuangpinExpandPinyin = DEFAULT_SHUANGPIN_EXPAND_PINYIN
     )
 
     private fun SharedPreferences.containsAnyPersistedSetting(): Boolean {
@@ -1979,6 +2070,10 @@ object WeTypeSettings {
             contains(KEY_LOGO_SHOW_ENABLED) ||
             contains(KEY_LOGO_COLOR_MODE) ||
             contains(KEY_LOGO_CUSTOM_COLOR) ||
+            contains(KEY_SPACE_SWIPE_UP_SWITCH_LANG) ||
+            contains(KEY_HIDE_ENGLISH_CANDIDATES) ||
+            contains(KEY_CANDIDATE_BAR_HEIGHT_DP) ||
+            contains(KEY_SHUANGPIN_EXPAND_PINYIN) ||
             contains(KEY_LOGO_IMAGE_ENABLED) ||
             contains(KEY_LOGO_IMAGE_TYPE) ||
             contains(KEY_LOGO_SVG_RECOLOR_ENABLED) ||

@@ -510,6 +510,18 @@ private fun WeTypeSettingsScreen(
     var toolbarIconBgOpacity by rememberSaveable {
         mutableIntStateOf(snapshot.toolbarIconBgOpacity)
     }
+    var candidateBarHeightDp by rememberSaveable {
+        mutableIntStateOf(snapshot.candidateBarHeightDp)
+    }
+    var spaceSwipeUpSwitchLang by rememberSaveable {
+        mutableStateOf(snapshot.spaceSwipeUpSwitchLang)
+    }
+    var hideEnglishCandidates by rememberSaveable {
+        mutableStateOf(snapshot.hideEnglishCandidates)
+    }
+    var shuangpinExpandPinyin by rememberSaveable {
+        mutableStateOf(snapshot.shuangpinExpandPinyin)
+    }
     var disableHotUpdate by rememberSaveable {
         mutableStateOf(snapshot.disableHotUpdate)
     }
@@ -807,6 +819,10 @@ private fun WeTypeSettingsScreen(
             fontMode = fontMode,
             hyperMaterialEnabled = hyperMaterialEnabled,
             glassOverrides = glassOverridesToSave,
+            spaceSwipeUpSwitchLang = spaceSwipeUpSwitchLang,
+            hideEnglishCandidates = hideEnglishCandidates,
+            candidateBarHeightDp = candidateBarHeightDp,
+            shuangpinExpandPinyin = shuangpinExpandPinyin,
             onPersisted = { saved ->
                 val restarted = saved && restartIme &&
                     WeTypeProcessRestarter.restartImeProcess(preferencesContext)
@@ -833,6 +849,10 @@ private fun WeTypeSettingsScreen(
         candidateBackgroundLeftMarginDp =
             WeTypeSettings.DEFAULT_CANDIDATE_BACKGROUND_LEFT_MARGIN_DP.toString()
         candidatePinyinLeftMarginDp = WeTypeSettings.DEFAULT_CANDIDATE_PINYIN_LEFT_MARGIN_DP.toString()
+        candidateBarHeightDp = WeTypeSettings.DEFAULT_CANDIDATE_BAR_HEIGHT_DP
+        spaceSwipeUpSwitchLang = WeTypeSettings.DEFAULT_SPACE_SWIPE_UP_SWITCH_LANG
+        hideEnglishCandidates = WeTypeSettings.DEFAULT_HIDE_ENGLISH_CANDIDATES
+        shuangpinExpandPinyin = WeTypeSettings.DEFAULT_SHUANGPIN_EXPAND_PINYIN
         toolbarIconBgOpacity = WeTypeSettings.DEFAULT_TOOLBAR_ICON_BG_OPACITY
         disableHotUpdate = WeTypeSettings.DEFAULT_DISABLE_HOT_UPDATE
         beautificationEnabled = WeTypeSettings.DEFAULT_BEAUTIFICATION_ENABLED
@@ -1044,6 +1064,8 @@ private fun WeTypeSettingsScreen(
                         onCandidateBackgroundAlphaChange = { candidateBackgroundAlpha = it },
                         candidateBackgroundCorner = candidateBackgroundCorner,
                         onCandidateBackgroundCornerChange = { candidateBackgroundCorner = it },
+                        candidateBarHeightDp = candidateBarHeightDp,
+                        onCandidateBarHeightDpChange = { candidateBarHeightDp = it },
                         beautificationEnabled = beautificationEnabled,
                         onBeautificationEnabledChange = { beautificationEnabled = it }
                     )
@@ -1057,6 +1079,8 @@ private fun WeTypeSettingsScreen(
                         onT9GestureEnabledChange = { t9GestureEnabled = it },
                         layout18KeyGestureEnabled = layout18KeyGestureEnabled,
                         onLayout18KeyGestureEnabledChange = { layout18KeyGestureEnabled = it },
+                        spaceSwipeUpSwitchLang = spaceSwipeUpSwitchLang,
+                        onSpaceSwipeUpSwitchLangChange = { spaceSwipeUpSwitchLang = it },
                         gestureVibration = gestureVibration,
                         onGestureVibrationChange = { gestureVibration = it },
                         t9GestureVibration = t9GestureVibration,
@@ -1096,6 +1120,10 @@ private fun WeTypeSettingsScreen(
                     FeatureTabContent(
                         layout18KeyEnabled = layout18KeyEnabled,
                         onLayout18KeyEnabledChange = { layout18KeyEnabled = it },
+                        hideEnglishCandidates = hideEnglishCandidates,
+                        onHideEnglishCandidatesChange = { hideEnglishCandidates = it },
+                        shuangpinExpandPinyin = shuangpinExpandPinyin,
+                        onShuangpinExpandPinyinChange = { shuangpinExpandPinyin = it },
                         logoEnabled = logoEnabled,
                         onLogoEnabledChange = { logoEnabled = it },
                         logoShowEnabled = logoShowEnabled,
@@ -1357,6 +1385,8 @@ private fun LazyListScope.AppearanceTabContent(
     onCandidateBackgroundAlphaChange: (Int) -> Unit,
     candidateBackgroundCorner: Int,
     onCandidateBackgroundCornerChange: (Int) -> Unit,
+    candidateBarHeightDp: Int,
+    onCandidateBarHeightDpChange: (Int) -> Unit,
     beautificationEnabled: Boolean,
     onBeautificationEnabledChange: (Boolean) -> Unit
 ) {
@@ -1662,6 +1692,26 @@ private fun LazyListScope.AppearanceTabContent(
                     max = WeTypeSettings.MAX_CANDIDATE_BACKGROUND_CORNER,
                     onValueChange = onCandidateBackgroundCornerChange
                 )
+
+                SliderPreferenceItem(
+                    title = "候选栏/工具栏高度",
+                    value = candidateBarHeightDp.toFloat(),
+                    range = 0f..64f,
+                    step = 1f,
+                    format = { v ->
+                        val intVal = v.roundToInt()
+                        if (intVal <= 0) "默认高度" else "$intVal dp"
+                    },
+                    onValueChange = { onCandidateBarHeightDpChange(it.roundToInt()) }
+                )
+
+                if (candidateBarHeightDp > 0) {
+                    ArrowPreference(
+                        title = "恢复候选栏默认高度",
+                        summary = "当前为 ${candidateBarHeightDp} dp，点击恢复为系统默认",
+                        onClick = { onCandidateBarHeightDpChange(0) }
+                    )
+                }
             }
         }
     }
@@ -2485,6 +2535,8 @@ private fun LazyListScope.GestureTabContent(
     onT9GestureEnabledChange: (Boolean) -> Unit,
     layout18KeyGestureEnabled: Boolean,
     onLayout18KeyGestureEnabledChange: (Boolean) -> Unit,
+    spaceSwipeUpSwitchLang: Boolean,
+    onSpaceSwipeUpSwitchLangChange: (Boolean) -> Unit,
     gestureVibration: Boolean,
     onGestureVibrationChange: (Boolean) -> Unit,
     t9GestureVibration: Boolean,
@@ -2543,6 +2595,12 @@ private fun LazyListScope.GestureTabContent(
                     description = "18 键双拼按键向下滑动触发绑定动作 (默认 Z/XC/BN/V)",
                     checked = layout18KeyGestureEnabled,
                     onCheckedChange = onLayout18KeyGestureEnabledChange
+                )
+                MiuixSwitchWidget(
+                    title = "空格上滑切换中英",
+                    description = "在空格键向上滑动快速切换中英文输入状态",
+                    checked = spaceSwipeUpSwitchLang,
+                    onCheckedChange = onSpaceSwipeUpSwitchLangChange
                 )
                 MiuixSwitchWidget(
                     title = "QWERTY 手势触觉反馈",
@@ -3332,6 +3390,10 @@ private fun GestureKeyButton(
 private fun LazyListScope.FeatureTabContent(
     layout18KeyEnabled: Boolean,
     onLayout18KeyEnabledChange: (Boolean) -> Unit,
+    hideEnglishCandidates: Boolean,
+    onHideEnglishCandidatesChange: (Boolean) -> Unit,
+    shuangpinExpandPinyin: Boolean,
+    onShuangpinExpandPinyinChange: (Boolean) -> Unit,
     logoEnabled: Boolean,
     onLogoEnabledChange: (Boolean) -> Unit,
     logoShowEnabled: Boolean,
@@ -3374,7 +3436,7 @@ private fun LazyListScope.FeatureTabContent(
 ) {
     // 0. 键盘布局卡片
     item {
-        SmallTitle(text = "键盘布局")
+        SmallTitle(text = "键盘布局与输入")
         Card(
             modifier = Modifier.padding(horizontal = 16.dp),
             insideMargin = PaddingValues(0.dp)
@@ -3385,6 +3447,18 @@ private fun LazyListScope.FeatureTabContent(
                     description = "动态替换官方九键双拼为18键布局，支持滑动符号与紧凑微调",
                     checked = layout18KeyEnabled,
                     onCheckedChange = onLayout18KeyEnabledChange
+                )
+                MiuixSwitchWidget(
+                    title = "双拼展开完整拼音",
+                    description = "键入双拼时在输入框或预编辑栏自动展开显示完整拼音（如小鹤输入“nihc”显示“nihao”）",
+                    checked = shuangpinExpandPinyin,
+                    onCheckedChange = onShuangpinExpandPinyinChange
+                )
+                MiuixSwitchWidget(
+                    title = "英文模式禁用候选词",
+                    description = "英文键盘下关闭候选、联想、补齐与纠错，纯净直接输入",
+                    checked = hideEnglishCandidates,
+                    onCheckedChange = onHideEnglishCandidatesChange
                 )
             }
         }

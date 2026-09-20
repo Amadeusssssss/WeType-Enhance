@@ -29,6 +29,8 @@ class KeyGestureResolver(
     private var startY = 0f
     private var thresholdPx = 20f
     private var boundAction = GestureAction.None
+    /** 上滑动作：空格上滑中英切换等专用槽位 */
+    private var boundSwipeUpAction = GestureAction.None
     private var triggered = false
     private var isCurrentT9 = false
     private var isCurrent18Key = false
@@ -39,6 +41,7 @@ class KeyGestureResolver(
         startY = 0f
         thresholdPx = 20f
         boundAction = GestureAction.None
+        boundSwipeUpAction = GestureAction.None
         triggered = false
         isCurrentT9 = false
         isCurrent18Key = false
@@ -59,17 +62,22 @@ class KeyGestureResolver(
         keyContext: Any?,
         event: MotionEvent,
         isT9: Boolean,
+        isSpaceHint: Boolean = false,
         cancelNative: (() -> Unit)? = null
     ): Boolean {
         val is18Key = is18KeyContext(view, keyContext)
-        val isEnabled = if (is18Key) {
+        val isGestureEnabled = if (is18Key) {
             WeTypeSettings.isLayout18KeyGestureEnabledXposed()
         } else if (isT9) {
             WeTypeSettings.isT9GestureEnabledXposed()
         } else {
             WeTypeSettings.isQwertyGestureEnabledXposed()
         }
-        if (!isEnabled) {
+        val isSpaceSwipeUpEnabled = WeTypeSettings.isSpaceSwipeUpSwitchLangXposed()
+        val isSpace = isSpaceHint || isSpaceKey(keyContext ?: view, keyDataMethod, isT9)
+        val hasActiveBinding = boundAction != GestureAction.None || boundSwipeUpAction != GestureAction.None
+
+        if (!isGestureEnabled && !(isSpaceSwipeUpEnabled && isSpace) && !hasActiveBinding) {
             reset()
             return false
         }
@@ -92,42 +100,49 @@ class KeyGestureResolver(
             isCurrent18Key = is18Key
             triggered = false
 
-            val action: GestureAction
-            val thresholdDp: Int
+            var action = GestureAction.None
+            var thresholdDp = 24
 
-            if (is18Key) {
-                val keyName = resolve18KeyName(keyContext ?: view)
-                if (keyName == null) {
-                    reset()
-                    return false
-                }
-                val bindings = WeTypeGestureSettings.parse18KeyBindings(
-                    WeTypeSettings.getLayout18KeyGestureBindingsJsonXposed()
-                )
-                action = bindings[keyName] ?: GestureAction.None
-                thresholdDp = WeTypeSettings.getLayout18KeyGestureThresholdXposed()
-            } else {
-                // 从 keyContext (selfdraw.j / KeyData) 或 view 中解析按键字符
-                val keyChar = resolveKeyChar(keyContext ?: view, keyDataMethod, isT9)
-                if (keyChar == '\u0000') {
-                    reset()
-                    return false
-                }
-                val bindings = WeTypeGestureSettings.parseBindings(WeTypeSettings.getGestureBindingsJsonXposed())
-                action = bindings[keyChar] ?: GestureAction.None
-                thresholdDp = if (isT9) {
-                    WeTypeSettings.getT9GestureThresholdXposed()
+            if (isGestureEnabled) {
+                if (is18Key) {
+                    val keyName = resolve18KeyName(keyContext ?: view)
+                    if (keyName != null) {
+                        val bindings = WeTypeGestureSettings.parse18KeyBindings(
+                            WeTypeSettings.getLayout18KeyGestureBindingsJsonXposed()
+                        )
+                        action = bindings[keyName] ?: GestureAction.None
+                    }
+                    thresholdDp = WeTypeSettings.getLayout18KeyGestureThresholdXposed()
                 } else {
-                    WeTypeSettings.getGestureThresholdXposed()
+                    val keyChar = resolveKeyChar(keyContext ?: view, keyDataMethod, isT9)
+                    if (keyChar != '\u0000') {
+                        val bindings = WeTypeGestureSettings.parseBindings(WeTypeSettings.getGestureBindingsJsonXposed())
+                        action = bindings[keyChar] ?: GestureAction.None
+                    }
+                    thresholdDp = if (isT9) {
+                        WeTypeSettings.getT9GestureThresholdXposed()
+                    } else {
+                        WeTypeSettings.getGestureThresholdXposed()
+                    }
                 }
             }
 
             boundAction = action
 
+            // 空格上滑中英切换：独立开关控制，不占用通用手势映射槽位
+            boundSwipeUpAction = if (isSpaceSwipeUpEnabled && isSpace) {
+                GestureAction.SwitchLanguage
+            } else {
+                GestureAction.None
+            }
+
             val density = view.resources.displayMetrics.density
             thresholdPx = max(1f, thresholdDp.coerceIn(10, 48) * density)
 
-            if (action == GestureAction.None || action == GestureAction.Disable) {
+            // 下滑和上滑均无绑定时才放弃拦截
+            if ((boundAction == GestureAction.None || boundAction == GestureAction.Disable) &&
+                boundSwipeUpAction == GestureAction.None
+            ) {
                 reset()
                 return false
             }
@@ -142,7 +157,9 @@ class KeyGestureResolver(
             return true
         }
 
-        if ((actionMasked == MotionEvent.ACTION_MOVE || actionMasked == MotionEvent.ACTION_UP) && boundAction != GestureAction.None) {
+        if ((actionMasked == MotionEvent.ACTION_MOVE || actionMasked == MotionEvent.ACTION_UP) &&
+            (boundAction != GestureAction.None || boundSwipeUpAction != GestureAction.None)
+        ) {
             val deltaX = event.x - startX
             val deltaY = event.y - startY
 
@@ -153,14 +170,27 @@ class KeyGestureResolver(
             )
 
             // 下滑判定: 纵向位移超过阈值，或快速轻弹(ACTION_UP且达75%阈值)，且横向未超容差
-            val isFlick = actionMasked == MotionEvent.ACTION_UP &&
+            val isDownFlick = actionMasked == MotionEvent.ACTION_UP &&
                 deltaY >= thresholdPx * 0.75f &&
                 abs(deltaX) <= driftLimit
+            val isSwipeDown = boundAction != GestureAction.None &&
+                boundAction != GestureAction.Disable &&
+                (deltaY >= thresholdPx || isDownFlick) &&
+                abs(deltaX) <= driftLimit
 
-            if ((deltaY >= thresholdPx || isFlick) && abs(deltaX) <= driftLimit) {
-                val actionToExecute = boundAction
+            // 上滑判定: 纵向位移负向超过阈值，或快速轻弹(ACTION_UP且达75%阈值)，且横向未超容差
+            val isUpFlick = actionMasked == MotionEvent.ACTION_UP &&
+                deltaY <= -thresholdPx * 0.75f &&
+                abs(deltaX) <= driftLimit
+            val isSwipeUp = boundSwipeUpAction != GestureAction.None &&
+                boundSwipeUpAction != GestureAction.Disable &&
+                (deltaY <= -thresholdPx || isUpFlick) &&
+                abs(deltaX) <= driftLimit
+
+            if (isSwipeDown || isSwipeUp) {
+                val actionToExecute = if (isSwipeUp) boundSwipeUpAction else boundAction
                 triggered = true
-                Log.i("Gesture triggered: action=${actionToExecute.title}, deltaY=$deltaY, threshold=$thresholdPx, isFlick=$isFlick")
+                Log.i("Gesture triggered: direction=${if (isSwipeUp) "UP" else "DOWN"}, action=${actionToExecute.title}, deltaY=$deltaY, threshold=$thresholdPx")
 
                 // 1. 发送 ACTION_CANCEL 中止原生按键事件 (优先回调原方法派发 CANCEL)
                 if (cancelNative != null) {
@@ -203,7 +233,7 @@ class KeyGestureResolver(
 
     /** 兼容旧接口重载 */
     fun onInterceptTouch(view: View, event: MotionEvent, isT9: Boolean): Boolean =
-        onInterceptTouch(view, null, event, isT9, null)
+        onInterceptTouch(view, null, event, isT9, isSpaceHint = false, cancelNative = null)
 
     /**
      * 派发 ACTION_CANCEL 给按键视图
@@ -280,7 +310,7 @@ class KeyGestureResolver(
 
         private fun normalizeKeyText(text: String, isT9: Boolean): Char {
             val trimmed = text.trim()
-            if (trimmed.equals("space", ignoreCase = true) || trimmed == "空格" || trimmed.equals("spacebar", ignoreCase = true)) {
+            if (trimmed.equals("space", ignoreCase = true) || trimmed == "空格" || trimmed.equals("spacebar", ignoreCase = true) || trimmed.contains("转文字")) {
                 return ' '
             }
             if (isT9) {
@@ -560,8 +590,37 @@ class KeyGestureResolver(
                 "z", "xc", "v", "bn", "m", "space"
             )
             if (clean in valid18Keys) return clean
-            if (clean == "空格" || clean == "spacebar") return "space"
+            if (clean == "空格" || clean == "spacebar" || clean.contains("转文字")) return "space"
             return null
+        }
+
+        fun isSpaceKey(keyContext: Any?, keyDataMethod: Method? = null, isT9: Boolean = false): Boolean {
+            if (keyContext == null) return false
+            if (resolveKeyChar(keyContext, keyDataMethod, isT9) == ' ') return true
+            if (resolve18KeyName(keyContext) == "space") return true
+            val raw = resolveRawText(keyContext) ?: (keyContext as? TextView)?.text?.toString() ?: ""
+            if (raw.contains("转文字") || raw.contains("空格") || raw.equals("space", ignoreCase = true) || raw.equals("spacebar", ignoreCase = true)) {
+                return true
+            }
+            val id = resolve18KeyId(keyContext) ?: ""
+            if (id.contains("space", ignoreCase = true)) return true
+
+            // 深度检查 keyContext 及其内部 keyData 的所有字段
+            val clazz = keyContext.javaClass
+            val accessor = accessorCache.getOrPut(clazz) { buildAccessor(clazz) }
+            val keyData = accessor.keyDataGetter?.invoke(keyContext) ?: (if (clazz.name.contains("KeyData")) keyContext else null)
+            if (keyData != null) {
+                val kdClass = keyData.javaClass
+                for (f in kdClass.declaredFields) {
+                    f.isAccessible = true
+                    val v = runCatching { f.get(keyData) }.getOrNull() ?: continue
+                    val str = v.toString()
+                    if (str.contains("space", ignoreCase = true) || str.contains("转文字") || str.contains("空格")) {
+                        return true
+                    }
+                }
+            }
+            return false
         }
     }
 }

@@ -42,6 +42,7 @@ internal object WeTypeGestureHooks {
 
                 installTouchHooks(bridge, classLoader, newResolver)
             }
+            WeTypeLanguageSwitcher.install(sourceDir, classLoader)
             Log.i("Success: WeType gesture hooks installation completed")
         }.onFailure {
             Log.e("Failed: Installing WeType gesture hooks: ${it.message}")
@@ -129,6 +130,7 @@ internal object WeTypeGestureHooks {
                         "static=${Modifier.isStatic(method.modifiers)} " +
                         "params=${method.parameterTypes.joinToString { it.name }}"
                 )
+                val isSpaceMethod = method.name == "H1" || method.name == "G1"
                 method.hookBefore { param ->
                     if (isDispatchingCancel) return@hookBefore
                     val view = param.thisObject as? View ?: return@hookBefore
@@ -139,7 +141,8 @@ internal object WeTypeGestureHooks {
                         view = view,
                         keyContext = keyContext,
                         event = motionEvent,
-                        isT9 = isT9View(view)
+                        isT9 = isT9View(view),
+                        isSpaceHint = isSpaceMethod
                     ) {
                         runCatching {
                             isDispatchingCancel = true
@@ -203,14 +206,15 @@ internal object WeTypeGestureHooks {
                 matcher {
                     returnType = "boolean"
                     paramCount = 3
-                    addParamType(MOTION_EVENT_CLASS)
                 }
             }.mapNotNull { data ->
                 if (data.paramTypes.size != 3) return@mapNotNull null
-                if (data.paramTypes[1].name != MOTION_EVENT_CLASS) return@mapNotNull null
-                val p0 = data.paramTypes[0].name
-                val p2 = data.paramTypes[2].name
-                if (!p0.startsWith(SELF_DRAW_PACKAGE) || !p2.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
+                val evIndex = data.paramTypes.indexOfFirst { it.name == MOTION_EVENT_CLASS }
+                if (evIndex < 0) return@mapNotNull null
+                val otherParams = data.paramTypes.filterIndexed { index, _ -> index != evIndex }
+                if (otherParams.size != 2 || !otherParams.all { it.name.startsWith(SELF_DRAW_PACKAGE) }) {
+                    return@mapNotNull null
+                }
                 runCatching { data.getMethodInstance(classLoader) }.getOrNull()
             }
         }.getOrDefault(emptyList())

@@ -22,6 +22,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import com.xposed.wetypehook.wetype.hook.WeTypeBottomViewManager
+import com.xposed.wetypehook.wetype.hook.WeTypeCandidateHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeClipboardHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeGestureHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeKeyLabelHooks
@@ -334,6 +335,7 @@ class MainHook : XposedModule() {
         HookEnvironment.withHookScope("wetype.gesture") { WeTypeGestureHooks.install(sourceDir, classLoader) }
         HookEnvironment.withHookScope("wetype.keylabel") { WeTypeKeyLabelHooks.install(sourceDir, classLoader) }
         HookEnvironment.withHookScope("wetype.layout-18key") { WeTypeLayoutHooks.install(::getModuleAssetManager) }
+        HookEnvironment.withHookScope("wetype.candidate-enhancements") { WeTypeCandidateHooks.install(sourceDir, classLoader) }
     }
 
     private fun installBaseImeHooks(isWeType: Boolean) {

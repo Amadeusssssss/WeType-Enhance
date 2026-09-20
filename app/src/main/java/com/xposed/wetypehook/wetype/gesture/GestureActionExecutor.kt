@@ -14,6 +14,7 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.ExtractedTextRequest
 import android.view.inputmethod.InputConnection
 import com.xposed.wetypehook.EXTRA_OPEN_WETYPE_EMBEDDED_SETTINGS
+import com.xposed.wetypehook.wetype.hook.WeTypeLanguageSwitcher
 import com.xposed.wetypehook.wetype.hook.WeTypePanelSwitcher
 import com.xposed.wetypehook.xposed.Log
 import java.lang.ref.WeakReference
@@ -60,6 +61,12 @@ object GestureActionExecutor {
             } else {
                 Log.e("[$TAG] Failed to open module settings page")
             }
+            return
+        }
+
+        // 3. 中英切换：直接调用官方切换入口，无需依赖 InputMethodService
+        if (action == GestureAction.SwitchLanguage) {
+            WeTypeLanguageSwitcher.toggle(view)
             return
         }
 
