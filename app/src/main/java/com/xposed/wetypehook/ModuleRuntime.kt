@@ -6,10 +6,31 @@ object ModuleRuntime {
     @Volatile
     private var configuredModuleApkPath: String? = null
 
+    @Volatile
+    private var configuredModuleNativeLibDir: String? = null
+
+    @Volatile
+    private var configuredHostDataDir: String? = null
+
     fun updateModuleApkPath(path: String?) {
         if (path.isNullOrBlank()) return
         configuredModuleApkPath = path
     }
+
+    fun updateModuleNativeLibDir(path: String?) {
+        if (path.isNullOrBlank()) return
+        configuredModuleNativeLibDir = path
+    }
+
+    fun getModuleNativeLibDir(): String? = configuredModuleNativeLibDir
+
+    fun updateHostDataDir(path: String?) {
+        if (path.isNullOrBlank()) return
+        configuredHostDataDir = path
+    }
+
+    fun getHostDataDir(): String? = configuredHostDataDir
+
 
     fun resolveModuleApkPath(anchorClass: Class<*> = MainHook::class.java): String? {
         configuredModuleApkPath?.takeIf(::isUsableApkPath)?.let { return it }

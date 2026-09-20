@@ -15,6 +15,8 @@ object ModuleBridgeContract {
     private const val TAG = "MIUIIME.ModuleBridge"
     const val ACTION_BRIDGE = "com.xposed.wetypehook.action.BRIDGE"
     const val ACTION_ACK_PREFIX = "com.xposed.wetypehook.action.BRIDGE_ACK"
+    const val ACTION_SYNC_HOST_SETTINGS = "com.tencent.wetype.action.SYNC_SETTINGS"
+    const val EXTRA_HOST_SETTINGS_BUNDLE = "extra_host_settings_bundle"
     const val MESSAGE_SAVE_SETTINGS = 1
     const val MESSAGE_RECORD_ACTIVATION = 2
     const val RESULT_ACCEPTED = 1

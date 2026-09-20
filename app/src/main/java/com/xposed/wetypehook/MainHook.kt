@@ -132,6 +132,7 @@ class MainHook : XposedModule() {
         HookEnvironment.attach(this, null, TAG)
         modulePath = moduleApplicationInfo.sourceDir
         ModuleRuntime.updateModuleApkPath(modulePath)
+        ModuleRuntime.updateModuleNativeLibDir(moduleApplicationInfo.nativeLibraryDir)
         Log.i(
             "Loaded in ${param.processName}: $frameworkName $frameworkVersion " +
                 "($frameworkVersionCode), API $apiVersion, properties=0x${frameworkProperties.toString(16)}"
@@ -204,6 +205,7 @@ class MainHook : XposedModule() {
         HookEnvironment.attach(this, null, TAG)
         modulePath = moduleApplicationInfo.sourceDir
         ModuleRuntime.updateModuleApkPath(modulePath)
+        ModuleRuntime.updateModuleNativeLibDir(moduleApplicationInfo.nativeLibraryDir)
         val targets = (param.savedInstanceState as? Bundle).toActiveTargets()
         synchronized(activeTargets) {
             activeTargets.clear()
@@ -1043,7 +1045,7 @@ class MainHook : XposedModule() {
      */
     private fun startPackageValidationHook(sourceDir: String, classLoader: ClassLoader) {
         runCatching {
-            System.loadLibrary("dexkit")
+            com.xposed.wetypehook.wetype.hook.DexKitLoader.ensureLoaded()
             DexKitBridge.create(sourceDir).use { bridge ->
                 val validationMethod = bridge.findMethod {
                     matcher {

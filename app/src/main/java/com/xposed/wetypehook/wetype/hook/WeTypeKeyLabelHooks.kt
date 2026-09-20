@@ -114,7 +114,7 @@ internal object WeTypeKeyLabelHooks {
         }
 
         runCatching {
-            System.loadLibrary("dexkit")
+            DexKitLoader.ensureLoaded()
             DexKitBridge.create(sourceDir).use { bridge ->
                 keyDataMethod = resolveKeyDataMethod(bridge, classLoader)
                 val targets = bridge.findMethod {

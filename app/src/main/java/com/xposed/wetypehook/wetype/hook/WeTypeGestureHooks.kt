@@ -33,7 +33,7 @@ internal object WeTypeGestureHooks {
         }
 
         runCatching {
-            System.loadLibrary("dexkit")
+            DexKitLoader.ensureLoaded()
             DexKitBridge.create(sourceDir).use { bridge ->
                 val keyDataMethod = resolveKeyDataMethod(bridge, classLoader)
                 val keyIdMethod = resolveKeyIdMethod(bridge, classLoader)
@@ -95,36 +95,32 @@ internal object WeTypeGestureHooks {
      * 那个（及它所在基类的空格处理）之外剩下的就是九宫格入口。
      */
     private fun installTouchHooks(bridge: DexKitBridge, classLoader: ClassLoader, resolver: KeyGestureResolver) {
+        val targets = linkedSetOf<Method>()
+
         val qwertyMethod = findTouchMethod(
             bridge, classLoader,
             usingString = "onTouch move2 lastKeyOperation is null",
             filterReturnBoolean = true
         )
-        if (qwertyMethod == null) Log.e("[$TAG] Failed to locate QWERTY touch method")
-
-        val targets = linkedSetOf<Method>()
-        qwertyMethod?.let { targets += it }
-        if (qwertyMethod == null) {
-            Log.e("[$TAG] QWERTY touch method is required before T9 can be resolved")
-            return
+        if (qwertyMethod != null) {
+            targets += qwertyMethod
+            Log.i("[$TAG] Located QWERTY touch method: ${qwertyMethod.declaringClass.name}#${qwertyMethod.name}")
+        } else {
+            Log.i("[$TAG] QWERTY touch method string fingerprint not matched; will rely on dispatchers")
         }
 
-        // `n` 基类里的空格键专用处理：签名与 `b.Y2` 相同，靠它调用了 getActionButton 区分。
-        var skippedBaseSpaceHandler = false
-        for (method in findTouchDispatchers(bridge, classLoader)) {
-            if (method == qwertyMethod) continue
-            if (method.declaringClass == qwertyMethod.declaringClass.superclass) {
-                skippedBaseSpaceHandler = true
-                continue
-            }
+        // 收集所有符合 (selfdraw.*, MotionEvent, selfdraw.*)Z 签名的触摸分发方法
+        // 包括：QWERTY 分发、T9 (18键) 分发、以及基类里的空格键分发
+        val dispatchers = findTouchDispatchers(bridge, classLoader)
+        for (method in dispatchers) {
             targets += method
         }
-        if (!skippedBaseSpaceHandler) {
-            Log.i("[$TAG] No base-class space handler found; skipping that filter")
+
+        if (targets.isEmpty()) {
+            Log.e("[$TAG] Failed to locate any touch dispatch methods! Gestures will not work.")
+            return
         }
-        if (targets.size == 1) {
-            Log.e("[$TAG] Failed to locate the T9 touch method; T9 gestures will not fire")
-        }
+        Log.i("[$TAG] Total touch dispatch targets to hook: ${targets.size}")
 
         targets.forEach { method ->
             runCatching {
@@ -207,15 +203,14 @@ internal object WeTypeGestureHooks {
                 matcher {
                     returnType = "boolean"
                     paramCount = 3
-                    addParamType(DRAW_CONTEXT_CLASS)
                     addParamType(MOTION_EVENT_CLASS)
-                    addParamType(EVENT_EXTRA_CLASS)
                 }
             }.mapNotNull { data ->
                 if (data.paramTypes.size != 3) return@mapNotNull null
                 if (data.paramTypes[1].name != MOTION_EVENT_CLASS) return@mapNotNull null
-                if (!data.paramTypes[0].name.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
-                if (!data.paramTypes[2].name.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
+                val p0 = data.paramTypes[0].name
+                val p2 = data.paramTypes[2].name
+                if (!p0.startsWith(SELF_DRAW_PACKAGE) || !p2.startsWith(SELF_DRAW_PACKAGE)) return@mapNotNull null
                 runCatching { data.getMethodInstance(classLoader) }.getOrNull()
             }
         }.getOrDefault(emptyList())

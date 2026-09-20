@@ -211,18 +211,16 @@ object Log {
         val module = HookEnvironment.moduleOrNull()
         if (message is Throwable) {
             val text = "[${HookEnvironment.logTag()}][$level] ${message.message ?: message.javaClass.name}"
+            AndroidLog.println(priority, HookEnvironment.logTag(), text)
             if (module != null) {
                 module.log(priority, HookEnvironment.logTag(), text, message)
-            } else {
-                AndroidLog.println(priority, HookEnvironment.logTag(), text)
             }
             return
         }
         val text = "[${HookEnvironment.logTag()}][$level] ${message ?: "null"}"
+        AndroidLog.println(priority, HookEnvironment.logTag(), text)
         if (module != null) {
             module.log(priority, HookEnvironment.logTag(), text)
-        } else {
-            AndroidLog.println(priority, HookEnvironment.logTag(), text)
         }
     }
 }

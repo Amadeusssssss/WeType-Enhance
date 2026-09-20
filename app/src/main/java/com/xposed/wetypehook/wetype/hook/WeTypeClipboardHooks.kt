@@ -38,7 +38,7 @@ internal object WeTypeClipboardHooks {
         }
 
         runCatching {
-            System.loadLibrary("dexkit")
+            DexKitLoader.ensureLoaded()
             DexKitBridge.create(sourceDir).use { bridge ->
                 hookCrossDevicePersist(bridge, classLoader)
                 hookSystemPaste(bridge, classLoader)
