@@ -76,6 +76,12 @@ internal object WeTypeKeyLabelHooks {
     @Volatile
     private var cachedBindings: Map<Char, GestureAction> = emptyMap()
 
+    @Volatile
+    private var cached18KeyBindingsJson: String? = null
+
+    @Volatile
+    private var cached18KeyBindings: Map<String, GestureAction> = emptyMap()
+
     private var keyDataMethod: Method? = null
 
     /**
@@ -177,19 +183,28 @@ internal object WeTypeKeyLabelHooks {
         val rect = resolveKeyCapRect(access, drawCtx) ?: return
         if (rect.isEmpty) return
         if (!WeTypeSettings.isShowGestureKeyLabelsXposed()) return
-
-        val isT9 = isT9Key(keyView, drawCtx)
-        val enabled = if (isT9) {
-            WeTypeSettings.isT9GestureEnabledXposed()
-        } else {
-            WeTypeSettings.isQwertyGestureEnabledXposed()
-        }
-        if (!enabled) return
         if (isSuppressedHost(keyView)) return
 
-        val keyChar = KeyGestureResolver.resolveKeyChar(drawCtx, keyDataMethod, isT9)
-        if (keyChar == '\u0000') return
-        val action = bindings()[keyChar] ?: GestureAction.None
+        val is18Key = KeyGestureResolver.is18KeyContext(keyView, drawCtx)
+        val action: GestureAction
+        if (is18Key) {
+            if (!WeTypeSettings.isLayout18KeyGestureEnabledXposed()) return
+            val keyName = KeyGestureResolver.resolve18KeyName(drawCtx) ?: return
+            action = bindings18Key()[keyName] ?: GestureAction.None
+        } else {
+            val isT9 = isT9Key(keyView, drawCtx)
+            val enabled = if (isT9) {
+                WeTypeSettings.isT9GestureEnabledXposed()
+            } else {
+                WeTypeSettings.isQwertyGestureEnabledXposed()
+            }
+            if (!enabled) return
+
+            val keyChar = KeyGestureResolver.resolveKeyChar(drawCtx, keyDataMethod, isT9)
+            if (keyChar == '\u0000') return
+            action = bindings()[keyChar] ?: GestureAction.None
+        }
+
         if (action == GestureAction.None || action == GestureAction.Disable) return
         val text = action.shortTitle
         if (text.isEmpty()) return
@@ -330,6 +345,15 @@ internal object WeTypeKeyLabelHooks {
             cachedBindings = WeTypeGestureSettings.parseBindings(json)
         }
         return cachedBindings
+    }
+
+    private fun bindings18Key(): Map<String, GestureAction> {
+        val json = WeTypeSettings.getLayout18KeyGestureBindingsJsonXposed()
+        if (json != cached18KeyBindingsJson) {
+            cached18KeyBindingsJson = json
+            cached18KeyBindings = WeTypeGestureSettings.parse18KeyBindings(json)
+        }
+        return cached18KeyBindings
     }
 
     private fun accessFor(drawCtx: Any): KeyDrawAccess? {

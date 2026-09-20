@@ -48,5 +48,16 @@ enum class GestureAction(
             'c' to Copy,
             'v' to Paste
         )
+
+        /**
+         * 默认的 18 键双拼键位绑定预设 (Z/XC/BN/V 经典快捷键)
+         */
+        val default18KeyBindings: Map<String, GestureAction> = mapOf(
+            "z" to SelectAll,
+            "xc" to Cut,
+            "bn" to Copy,
+            "v" to Paste,
+            "space" to OpenClipboard
+        )
     }
 }

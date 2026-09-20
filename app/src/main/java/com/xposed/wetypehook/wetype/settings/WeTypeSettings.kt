@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log as AndroidLog
 import com.xposed.wetypehook.ModuleBridgeContract
+import com.xposed.wetypehook.wetype.gesture.GestureAction
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.UUID
 
@@ -51,8 +52,10 @@ object WeTypeSettings {
     private const val KEY_CANDIDATE_PINYIN_LEFT_MARGIN_DP = "candidate_pinyin_left_margin_dp"
     private const val KEY_APPEARANCE_COLOR_PREFIX = "appearance_color_"
     private const val KEY_DISABLE_HOT_UPDATE = "disable_hot_update"
-    const val KEY_BEAUTIFICATION_ENABLED = "beautification_enabled"
     private const val KEY_TOOLBAR_ICON_BG_OPACITY = "toolbar_icon_bg_opacity"
+    const val KEY_BEAUTIFICATION_ENABLED = "beautification_enabled"
+    const val DEFAULT_BEAUTIFICATION_ENABLED = true
+
     const val KEY_SHOW_CROSS_DEVICE_CLIPBOARD = "show_cross_device_clipboard"
     const val KEY_REMOVE_CLIPBOARD_RETENTION_LIMIT = "remove_clipboard_retention_limit"
     const val KEY_REMOVE_CLIPBOARD_TEXT_LIMIT = "remove_clipboard_text_limit"
@@ -84,6 +87,18 @@ object WeTypeSettings {
 
     const val KEY_LAYOUT_18KEY_ENABLED = "layout_18key_enabled"
     const val DEFAULT_LAYOUT_18KEY_ENABLED = true
+
+    const val KEY_18KEY_GESTURE_ENABLED = "layout_18key_gesture_enabled"
+    const val KEY_18KEY_GESTURE_THRESHOLD = "layout_18key_gesture_threshold"
+    const val KEY_18KEY_GESTURE_VIBRATION = "layout_18key_gesture_vibration"
+    const val KEY_18KEY_GESTURE_BINDINGS_JSON = "layout_18key_gesture_bindings_json"
+
+    const val DEFAULT_18KEY_GESTURE_ENABLED = true
+    const val DEFAULT_18KEY_GESTURE_THRESHOLD = 20
+    const val DEFAULT_18KEY_GESTURE_VIBRATION = true
+    val DEFAULT_18KEY_GESTURE_BINDINGS_JSON: String by lazy {
+        WeTypeGestureSettings.serialize18KeyBindings(GestureAction.default18KeyBindings)
+    }
 
     const val DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD = true
     const val DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT = true
@@ -241,7 +256,6 @@ object WeTypeSettings {
     const val DEFAULT_CANDIDATE_PINYIN_LEFT_MARGIN_DP = 16
     const val DEFAULT_TOOLBAR_ICON_BG_OPACITY = 150
     const val DEFAULT_DISABLE_HOT_UPDATE = true
-    const val DEFAULT_BEAUTIFICATION_ENABLED = true
     const val DEFAULT_HYPER_MATERIAL_ENABLED = false
 
     private val legacyKeyColorDefaults = mapOf(
@@ -333,11 +347,15 @@ object WeTypeSettings {
         val clipboardImageMaxSizeMb: Int = DEFAULT_CLIPBOARD_IMAGE_MAX_SIZE_MB,
         val qwertyGestureEnabled: Boolean = DEFAULT_QWERTY_GESTURE_ENABLED,
         val t9GestureEnabled: Boolean = DEFAULT_T9_GESTURE_ENABLED,
+        val layout18KeyGestureEnabled: Boolean = DEFAULT_18KEY_GESTURE_ENABLED,
         val gestureThreshold: Int = DEFAULT_GESTURE_THRESHOLD,
         val t9GestureThreshold: Int = DEFAULT_T9_GESTURE_THRESHOLD,
+        val layout18KeyGestureThreshold: Int = DEFAULT_18KEY_GESTURE_THRESHOLD,
         val gestureVibration: Boolean = DEFAULT_GESTURE_VIBRATION,
         val t9GestureVibration: Boolean = DEFAULT_T9_GESTURE_VIBRATION,
+        val layout18KeyGestureVibration: Boolean = DEFAULT_18KEY_GESTURE_VIBRATION,
         val gestureBindingsJson: String = DEFAULT_GESTURE_BINDINGS_JSON,
+        val layout18KeyGestureBindingsJson: String = DEFAULT_18KEY_GESTURE_BINDINGS_JSON,
         val showGestureKeyLabels: Boolean = DEFAULT_SHOW_GESTURE_KEY_LABELS,
         val gestureLabelTextSizeSp: Int = DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP,
         val gestureLabelAlpha: Int = DEFAULT_GESTURE_LABEL_ALPHA,
@@ -458,13 +476,18 @@ object WeTypeSettings {
         .putBoolean(KEY_BACKUP_PRE_EXPORT_DOWNLOAD, settings.preExportDownload)
         .commit()
 
+    fun isBeautificationEnabled(context: Context): Boolean = readSnapshot(context).beautificationEnabled
     fun isQwertyGestureEnabled(context: Context): Boolean = readSnapshot(context).qwertyGestureEnabled
     fun isT9GestureEnabled(context: Context): Boolean = readSnapshot(context).t9GestureEnabled
+    fun isLayout18KeyGestureEnabled(context: Context): Boolean = readSnapshot(context).layout18KeyGestureEnabled
     fun getGestureThreshold(context: Context): Int = readSnapshot(context).gestureThreshold
     fun getT9GestureThreshold(context: Context): Int = readSnapshot(context).t9GestureThreshold
+    fun getLayout18KeyGestureThreshold(context: Context): Int = readSnapshot(context).layout18KeyGestureThreshold
     fun isGestureVibration(context: Context): Boolean = readSnapshot(context).gestureVibration
     fun isT9GestureVibration(context: Context): Boolean = readSnapshot(context).t9GestureVibration
+    fun isLayout18KeyGestureVibration(context: Context): Boolean = readSnapshot(context).layout18KeyGestureVibration
     fun getGestureBindingsJson(context: Context): String = readSnapshot(context).gestureBindingsJson
+    fun getLayout18KeyGestureBindingsJson(context: Context): String = readSnapshot(context).layout18KeyGestureBindingsJson
     fun isShowGestureKeyLabels(context: Context): Boolean = readSnapshot(context).showGestureKeyLabels
     fun getGestureLabelTextSizeSp(context: Context): Int = readSnapshot(context).gestureLabelTextSizeSp
     fun getGestureLabelAlpha(context: Context): Int = readSnapshot(context).gestureLabelAlpha
@@ -473,8 +496,6 @@ object WeTypeSettings {
     fun getGestureLabelMarginBottomDp(context: Context): Int = readSnapshot(context).gestureLabelMarginBottomDp
     fun getGestureLabelMarginLeftDp(context: Context): Int = readSnapshot(context).gestureLabelMarginLeftDp
     fun getGestureLabelMarginRightDp(context: Context): Int = readSnapshot(context).gestureLabelMarginRightDp
-
-    fun isBeautificationEnabled(context: Context): Boolean = readSnapshot(context).beautificationEnabled
     fun isLayout18KeyEnabled(context: Context): Boolean = readSnapshot(context).layout18KeyEnabled
 
     fun isShowCrossDeviceClipboardXposed(): Boolean = readSnapshotXposed().showCrossDeviceClipboard
@@ -496,11 +517,15 @@ object WeTypeSettings {
     fun isLayout18KeyEnabledXposed(): Boolean = readSnapshotXposed().layout18KeyEnabled
     fun isQwertyGestureEnabledXposed(): Boolean = readSnapshotXposed().qwertyGestureEnabled
     fun isT9GestureEnabledXposed(): Boolean = readSnapshotXposed().t9GestureEnabled
+    fun isLayout18KeyGestureEnabledXposed(): Boolean = readSnapshotXposed().layout18KeyGestureEnabled
     fun getGestureThresholdXposed(): Int = readSnapshotXposed().gestureThreshold
     fun getT9GestureThresholdXposed(): Int = readSnapshotXposed().t9GestureThreshold
+    fun getLayout18KeyGestureThresholdXposed(): Int = readSnapshotXposed().layout18KeyGestureThreshold
     fun isGestureVibrationXposed(): Boolean = readSnapshotXposed().gestureVibration
     fun isT9GestureVibrationXposed(): Boolean = readSnapshotXposed().t9GestureVibration
+    fun isLayout18KeyGestureVibrationXposed(): Boolean = readSnapshotXposed().layout18KeyGestureVibration
     fun getGestureBindingsJsonXposed(): String = readSnapshotXposed().gestureBindingsJson
+    fun getLayout18KeyGestureBindingsJsonXposed(): String = readSnapshotXposed().layout18KeyGestureBindingsJson
     fun isShowGestureKeyLabelsXposed(): Boolean = readSnapshotXposed().showGestureKeyLabels
     fun getGestureLabelTextSizeSpXposed(): Int = readSnapshotXposed().gestureLabelTextSizeSp
     fun getGestureLabelAlphaXposed(): Int = readSnapshotXposed().gestureLabelAlpha
@@ -762,11 +787,15 @@ object WeTypeSettings {
         clipboardImageMaxSizeMb: Int = DEFAULT_CLIPBOARD_IMAGE_MAX_SIZE_MB,
         qwertyGestureEnabled: Boolean = DEFAULT_QWERTY_GESTURE_ENABLED,
         t9GestureEnabled: Boolean = DEFAULT_T9_GESTURE_ENABLED,
+        layout18KeyGestureEnabled: Boolean = DEFAULT_18KEY_GESTURE_ENABLED,
         gestureThreshold: Int = DEFAULT_GESTURE_THRESHOLD,
         t9GestureThreshold: Int = DEFAULT_T9_GESTURE_THRESHOLD,
+        layout18KeyGestureThreshold: Int = DEFAULT_18KEY_GESTURE_THRESHOLD,
         gestureVibration: Boolean = DEFAULT_GESTURE_VIBRATION,
         t9GestureVibration: Boolean = DEFAULT_T9_GESTURE_VIBRATION,
+        layout18KeyGestureVibration: Boolean = DEFAULT_18KEY_GESTURE_VIBRATION,
         gestureBindingsJson: String = DEFAULT_GESTURE_BINDINGS_JSON,
+        layout18KeyGestureBindingsJson: String = DEFAULT_18KEY_GESTURE_BINDINGS_JSON,
         showGestureKeyLabels: Boolean = DEFAULT_SHOW_GESTURE_KEY_LABELS,
         gestureLabelTextSizeSp: Int = DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP,
         gestureLabelAlpha: Int = DEFAULT_GESTURE_LABEL_ALPHA,
@@ -824,11 +853,15 @@ object WeTypeSettings {
             clipboardImageMaxSizeMb = clipboardImageMaxSizeMb,
             qwertyGestureEnabled = qwertyGestureEnabled,
             t9GestureEnabled = t9GestureEnabled,
+            layout18KeyGestureEnabled = layout18KeyGestureEnabled,
             gestureThreshold = gestureThreshold,
             t9GestureThreshold = t9GestureThreshold,
+            layout18KeyGestureThreshold = layout18KeyGestureThreshold,
             gestureVibration = gestureVibration,
             t9GestureVibration = t9GestureVibration,
+            layout18KeyGestureVibration = layout18KeyGestureVibration,
             gestureBindingsJson = gestureBindingsJson,
+            layout18KeyGestureBindingsJson = layout18KeyGestureBindingsJson,
             showGestureKeyLabels = showGestureKeyLabels,
             gestureLabelTextSizeSp = gestureLabelTextSizeSp.coerceIn(6, 16),
             gestureLabelAlpha = gestureLabelAlpha.coerceIn(0, 255),
@@ -888,6 +921,8 @@ object WeTypeSettings {
             toolbarIconBgOpacity = current.toolbarIconBgOpacity,
             appearanceColors = current.appearanceColors,
             disableHotUpdate = current.disableHotUpdate,
+            beautificationEnabled = current.beautificationEnabled,
+            layout18KeyEnabled = current.layout18KeyEnabled,
             showCrossDeviceClipboard = current.showCrossDeviceClipboard,
             removeClipboardRetentionLimit = current.removeClipboardRetentionLimit,
             removeClipboardTextLimit = current.removeClipboardTextLimit,
@@ -900,11 +935,15 @@ object WeTypeSettings {
             clipboardImageMaxSizeMb = current.clipboardImageMaxSizeMb,
             qwertyGestureEnabled = current.qwertyGestureEnabled,
             t9GestureEnabled = current.t9GestureEnabled,
+            layout18KeyGestureEnabled = current.layout18KeyGestureEnabled,
             gestureThreshold = current.gestureThreshold,
             t9GestureThreshold = current.t9GestureThreshold,
+            layout18KeyGestureThreshold = current.layout18KeyGestureThreshold,
             gestureVibration = current.gestureVibration,
             t9GestureVibration = current.t9GestureVibration,
+            layout18KeyGestureVibration = current.layout18KeyGestureVibration,
             gestureBindingsJson = current.gestureBindingsJson,
+            layout18KeyGestureBindingsJson = current.layout18KeyGestureBindingsJson,
             showGestureKeyLabels = current.showGestureKeyLabels,
             gestureLabelTextSizeSp = current.gestureLabelTextSizeSp,
             gestureLabelAlpha = current.gestureLabelAlpha,
@@ -1090,7 +1129,7 @@ object WeTypeSettings {
         toolbarIconBgOpacity: Int,
         appearanceColors: Map<String, Int>,
         disableHotUpdate: Boolean,
-        beautificationEnabled: Boolean,
+        beautificationEnabled: Boolean = DEFAULT_BEAUTIFICATION_ENABLED,
         layout18KeyEnabled: Boolean = DEFAULT_LAYOUT_18KEY_ENABLED,
         showCrossDeviceClipboard: Boolean = DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD,
         removeClipboardRetentionLimit: Boolean = DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT,
@@ -1104,11 +1143,15 @@ object WeTypeSettings {
         clipboardImageMaxSizeMb: Int = DEFAULT_CLIPBOARD_IMAGE_MAX_SIZE_MB,
         qwertyGestureEnabled: Boolean = DEFAULT_QWERTY_GESTURE_ENABLED,
         t9GestureEnabled: Boolean = DEFAULT_T9_GESTURE_ENABLED,
+        layout18KeyGestureEnabled: Boolean = DEFAULT_18KEY_GESTURE_ENABLED,
         gestureThreshold: Int = DEFAULT_GESTURE_THRESHOLD,
         t9GestureThreshold: Int = DEFAULT_T9_GESTURE_THRESHOLD,
+        layout18KeyGestureThreshold: Int = DEFAULT_18KEY_GESTURE_THRESHOLD,
         gestureVibration: Boolean = DEFAULT_GESTURE_VIBRATION,
         t9GestureVibration: Boolean = DEFAULT_T9_GESTURE_VIBRATION,
+        layout18KeyGestureVibration: Boolean = DEFAULT_18KEY_GESTURE_VIBRATION,
         gestureBindingsJson: String = DEFAULT_GESTURE_BINDINGS_JSON,
+        layout18KeyGestureBindingsJson: String = DEFAULT_18KEY_GESTURE_BINDINGS_JSON,
         showGestureKeyLabels: Boolean = DEFAULT_SHOW_GESTURE_KEY_LABELS,
         gestureLabelTextSizeSp: Int = DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP,
         gestureLabelAlpha: Int = DEFAULT_GESTURE_LABEL_ALPHA,
@@ -1167,11 +1210,15 @@ object WeTypeSettings {
             clipboardImageMaxSizeMb = sanitizeClipboardImageMaxSizeMb(clipboardImageMaxSizeMb),
             qwertyGestureEnabled = qwertyGestureEnabled,
             t9GestureEnabled = t9GestureEnabled,
+            layout18KeyGestureEnabled = layout18KeyGestureEnabled,
             gestureThreshold = gestureThreshold.coerceIn(10, 48),
             t9GestureThreshold = t9GestureThreshold.coerceIn(10, 48),
+            layout18KeyGestureThreshold = layout18KeyGestureThreshold.coerceIn(10, 48),
             gestureVibration = gestureVibration,
             t9GestureVibration = t9GestureVibration,
+            layout18KeyGestureVibration = layout18KeyGestureVibration,
             gestureBindingsJson = gestureBindingsJson,
+            layout18KeyGestureBindingsJson = layout18KeyGestureBindingsJson,
             showGestureKeyLabels = showGestureKeyLabels,
             gestureLabelTextSizeSp = gestureLabelTextSizeSp.coerceIn(6, 16),
             gestureLabelAlpha = gestureLabelAlpha.coerceIn(0, 255),
@@ -1281,11 +1328,15 @@ object WeTypeSettings {
             .putInt(KEY_CLIPBOARD_IMAGE_MAX_SIZE_MB, snapshot.clipboardImageMaxSizeMb)
             .putBoolean(KEY_QWERTY_GESTURE_ENABLED, snapshot.qwertyGestureEnabled)
             .putBoolean(KEY_T9_GESTURE_ENABLED, snapshot.t9GestureEnabled)
+            .putBoolean(KEY_18KEY_GESTURE_ENABLED, snapshot.layout18KeyGestureEnabled)
             .putInt(KEY_GESTURE_THRESHOLD, snapshot.gestureThreshold)
             .putInt(KEY_T9_GESTURE_THRESHOLD, snapshot.t9GestureThreshold)
+            .putInt(KEY_18KEY_GESTURE_THRESHOLD, snapshot.layout18KeyGestureThreshold)
             .putBoolean(KEY_GESTURE_VIBRATION, snapshot.gestureVibration)
             .putBoolean(KEY_T9_GESTURE_VIBRATION, snapshot.t9GestureVibration)
+            .putBoolean(KEY_18KEY_GESTURE_VIBRATION, snapshot.layout18KeyGestureVibration)
             .putString(KEY_GESTURE_BINDINGS_JSON, snapshot.gestureBindingsJson)
+            .putString(KEY_18KEY_GESTURE_BINDINGS_JSON, snapshot.layout18KeyGestureBindingsJson)
             .putBoolean(KEY_SHOW_GESTURE_KEY_LABELS, snapshot.showGestureKeyLabels)
             .putInt(KEY_GESTURE_LABEL_TEXT_SIZE_SP, snapshot.gestureLabelTextSizeSp)
             .putInt(KEY_GESTURE_LABEL_ALPHA, snapshot.gestureLabelAlpha)
@@ -1465,11 +1516,15 @@ object WeTypeSettings {
         putInt(KEY_CLIPBOARD_IMAGE_MAX_SIZE_MB, clipboardImageMaxSizeMb)
         putBoolean(KEY_QWERTY_GESTURE_ENABLED, qwertyGestureEnabled)
         putBoolean(KEY_T9_GESTURE_ENABLED, t9GestureEnabled)
+        putBoolean(KEY_18KEY_GESTURE_ENABLED, layout18KeyGestureEnabled)
         putInt(KEY_GESTURE_THRESHOLD, gestureThreshold)
         putInt(KEY_T9_GESTURE_THRESHOLD, t9GestureThreshold)
+        putInt(KEY_18KEY_GESTURE_THRESHOLD, layout18KeyGestureThreshold)
         putBoolean(KEY_GESTURE_VIBRATION, gestureVibration)
         putBoolean(KEY_T9_GESTURE_VIBRATION, t9GestureVibration)
+        putBoolean(KEY_18KEY_GESTURE_VIBRATION, layout18KeyGestureVibration)
         putString(KEY_GESTURE_BINDINGS_JSON, gestureBindingsJson)
+        putString(KEY_18KEY_GESTURE_BINDINGS_JSON, layout18KeyGestureBindingsJson)
         putBoolean(KEY_SHOW_GESTURE_KEY_LABELS, showGestureKeyLabels)
         putInt(KEY_GESTURE_LABEL_TEXT_SIZE_SP, gestureLabelTextSizeSp)
         putInt(KEY_GESTURE_LABEL_ALPHA, gestureLabelAlpha)
@@ -1593,11 +1648,15 @@ object WeTypeSettings {
             ),
             qwertyGestureEnabled = getBoolean(KEY_QWERTY_GESTURE_ENABLED, defaults.qwertyGestureEnabled),
             t9GestureEnabled = getBoolean(KEY_T9_GESTURE_ENABLED, defaults.t9GestureEnabled),
+            layout18KeyGestureEnabled = getBoolean(KEY_18KEY_GESTURE_ENABLED, defaults.layout18KeyGestureEnabled),
             gestureThreshold = getInt(KEY_GESTURE_THRESHOLD, defaults.gestureThreshold).coerceIn(10, 48),
             t9GestureThreshold = getInt(KEY_T9_GESTURE_THRESHOLD, defaults.t9GestureThreshold).coerceIn(10, 48),
+            layout18KeyGestureThreshold = getInt(KEY_18KEY_GESTURE_THRESHOLD, defaults.layout18KeyGestureThreshold).coerceIn(10, 48),
             gestureVibration = getBoolean(KEY_GESTURE_VIBRATION, defaults.gestureVibration),
             t9GestureVibration = getBoolean(KEY_T9_GESTURE_VIBRATION, defaults.t9GestureVibration),
+            layout18KeyGestureVibration = getBoolean(KEY_18KEY_GESTURE_VIBRATION, defaults.layout18KeyGestureVibration),
             gestureBindingsJson = getString(KEY_GESTURE_BINDINGS_JSON) ?: defaults.gestureBindingsJson,
+            layout18KeyGestureBindingsJson = getString(KEY_18KEY_GESTURE_BINDINGS_JSON) ?: defaults.layout18KeyGestureBindingsJson,
             showGestureKeyLabels = getBoolean(KEY_SHOW_GESTURE_KEY_LABELS, defaults.showGestureKeyLabels),
             gestureLabelTextSizeSp = getInt(KEY_GESTURE_LABEL_TEXT_SIZE_SP, defaults.gestureLabelTextSizeSp)
                 .coerceIn(6, 16),
@@ -1748,11 +1807,15 @@ object WeTypeSettings {
             ),
             qwertyGestureEnabled = getBoolean(KEY_QWERTY_GESTURE_ENABLED, DEFAULT_QWERTY_GESTURE_ENABLED),
             t9GestureEnabled = getBoolean(KEY_T9_GESTURE_ENABLED, DEFAULT_T9_GESTURE_ENABLED),
+            layout18KeyGestureEnabled = getBoolean(KEY_18KEY_GESTURE_ENABLED, DEFAULT_18KEY_GESTURE_ENABLED),
             gestureThreshold = getInt(KEY_GESTURE_THRESHOLD, DEFAULT_GESTURE_THRESHOLD).coerceIn(10, 48),
             t9GestureThreshold = getInt(KEY_T9_GESTURE_THRESHOLD, DEFAULT_T9_GESTURE_THRESHOLD).coerceIn(10, 48),
+            layout18KeyGestureThreshold = getInt(KEY_18KEY_GESTURE_THRESHOLD, DEFAULT_18KEY_GESTURE_THRESHOLD).coerceIn(10, 48),
             gestureVibration = getBoolean(KEY_GESTURE_VIBRATION, DEFAULT_GESTURE_VIBRATION),
             t9GestureVibration = getBoolean(KEY_T9_GESTURE_VIBRATION, DEFAULT_T9_GESTURE_VIBRATION),
+            layout18KeyGestureVibration = getBoolean(KEY_18KEY_GESTURE_VIBRATION, DEFAULT_18KEY_GESTURE_VIBRATION),
             gestureBindingsJson = getString(KEY_GESTURE_BINDINGS_JSON, DEFAULT_GESTURE_BINDINGS_JSON) ?: DEFAULT_GESTURE_BINDINGS_JSON,
+            layout18KeyGestureBindingsJson = getString(KEY_18KEY_GESTURE_BINDINGS_JSON, DEFAULT_18KEY_GESTURE_BINDINGS_JSON) ?: DEFAULT_18KEY_GESTURE_BINDINGS_JSON,
             showGestureKeyLabels = getBoolean(KEY_SHOW_GESTURE_KEY_LABELS, DEFAULT_SHOW_GESTURE_KEY_LABELS),
             gestureLabelTextSizeSp = getInt(KEY_GESTURE_LABEL_TEXT_SIZE_SP, DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP)
                 .coerceIn(6, 16),
@@ -1838,11 +1901,15 @@ object WeTypeSettings {
         clipboardImageMaxSizeMb = DEFAULT_CLIPBOARD_IMAGE_MAX_SIZE_MB,
         qwertyGestureEnabled = DEFAULT_QWERTY_GESTURE_ENABLED,
         t9GestureEnabled = DEFAULT_T9_GESTURE_ENABLED,
+        layout18KeyGestureEnabled = DEFAULT_18KEY_GESTURE_ENABLED,
         gestureThreshold = DEFAULT_GESTURE_THRESHOLD,
         t9GestureThreshold = DEFAULT_T9_GESTURE_THRESHOLD,
+        layout18KeyGestureThreshold = DEFAULT_18KEY_GESTURE_THRESHOLD,
         gestureVibration = DEFAULT_GESTURE_VIBRATION,
         t9GestureVibration = DEFAULT_T9_GESTURE_VIBRATION,
+        layout18KeyGestureVibration = DEFAULT_18KEY_GESTURE_VIBRATION,
         gestureBindingsJson = DEFAULT_GESTURE_BINDINGS_JSON,
+        layout18KeyGestureBindingsJson = DEFAULT_18KEY_GESTURE_BINDINGS_JSON,
         showGestureKeyLabels = DEFAULT_SHOW_GESTURE_KEY_LABELS,
         gestureLabelTextSizeSp = DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP,
         gestureLabelAlpha = DEFAULT_GESTURE_LABEL_ALPHA,
@@ -1891,11 +1958,15 @@ object WeTypeSettings {
             contains(KEY_CLIPBOARD_IMAGE_MAX_SIZE_MB) ||
             contains(KEY_QWERTY_GESTURE_ENABLED) ||
             contains(KEY_T9_GESTURE_ENABLED) ||
+            contains(KEY_18KEY_GESTURE_ENABLED) ||
             contains(KEY_GESTURE_THRESHOLD) ||
             contains(KEY_T9_GESTURE_THRESHOLD) ||
+            contains(KEY_18KEY_GESTURE_THRESHOLD) ||
             contains(KEY_GESTURE_VIBRATION) ||
             contains(KEY_T9_GESTURE_VIBRATION) ||
+            contains(KEY_18KEY_GESTURE_VIBRATION) ||
             contains(KEY_GESTURE_BINDINGS_JSON) ||
+            contains(KEY_18KEY_GESTURE_BINDINGS_JSON) ||
             contains(KEY_SHOW_GESTURE_KEY_LABELS) ||
             contains(KEY_GESTURE_LABEL_TEXT_SIZE_SP) ||
             contains(KEY_GESTURE_LABEL_ALPHA) ||

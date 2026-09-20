@@ -31,6 +31,7 @@ class KeyGestureResolver(
     private var boundAction = GestureAction.None
     private var triggered = false
     private var isCurrentT9 = false
+    private var isCurrent18Key = false
 
     fun reset() {
         activeViewRef.clear()
@@ -40,6 +41,7 @@ class KeyGestureResolver(
         boundAction = GestureAction.None
         triggered = false
         isCurrentT9 = false
+        isCurrent18Key = false
     }
 
     /**
@@ -59,7 +61,10 @@ class KeyGestureResolver(
         isT9: Boolean,
         cancelNative: (() -> Unit)? = null
     ): Boolean {
-        val isEnabled = if (isT9) {
+        val is18Key = is18KeyContext(view, keyContext)
+        val isEnabled = if (is18Key) {
+            WeTypeSettings.isLayout18KeyGestureEnabledXposed()
+        } else if (isT9) {
             WeTypeSettings.isT9GestureEnabledXposed()
         } else {
             WeTypeSettings.isQwertyGestureEnabledXposed()
@@ -84,26 +89,43 @@ class KeyGestureResolver(
             startY = event.y
             activeViewRef = WeakReference(view)
             isCurrentT9 = isT9
+            isCurrent18Key = is18Key
             triggered = false
 
-            // 从 keyContext (selfdraw.j / KeyData) 或 view 中解析按键字符
-            val keyChar = resolveKeyChar(keyContext ?: view, keyDataMethod, isT9)
-            if (keyChar == '\u0000') {
-                reset()
-                return false
+            val action: GestureAction
+            val thresholdDp: Int
+
+            if (is18Key) {
+                val keyName = resolve18KeyName(keyContext ?: view)
+                if (keyName == null) {
+                    reset()
+                    return false
+                }
+                val bindings = WeTypeGestureSettings.parse18KeyBindings(
+                    WeTypeSettings.getLayout18KeyGestureBindingsJsonXposed()
+                )
+                action = bindings[keyName] ?: GestureAction.None
+                thresholdDp = WeTypeSettings.getLayout18KeyGestureThresholdXposed()
+            } else {
+                // 从 keyContext (selfdraw.j / KeyData) 或 view 中解析按键字符
+                val keyChar = resolveKeyChar(keyContext ?: view, keyDataMethod, isT9)
+                if (keyChar == '\u0000') {
+                    reset()
+                    return false
+                }
+                val bindings = WeTypeGestureSettings.parseBindings(WeTypeSettings.getGestureBindingsJsonXposed())
+                action = bindings[keyChar] ?: GestureAction.None
+                thresholdDp = if (isT9) {
+                    WeTypeSettings.getT9GestureThresholdXposed()
+                } else {
+                    WeTypeSettings.getGestureThresholdXposed()
+                }
             }
-            val bindings = WeTypeGestureSettings.parseBindings(WeTypeSettings.getGestureBindingsJsonXposed())
-            val action = bindings[keyChar] ?: GestureAction.None
+
             boundAction = action
 
-            val thresholdDp = if (isT9) {
-                WeTypeSettings.getT9GestureThresholdXposed()
-            } else {
-                WeTypeSettings.getGestureThresholdXposed()
-            }.coerceIn(10, 48)
-
             val density = view.resources.displayMetrics.density
-            thresholdPx = max(1f, thresholdDp * density)
+            thresholdPx = max(1f, thresholdDp.coerceIn(10, 48) * density)
 
             if (action == GestureAction.None || action == GestureAction.Disable) {
                 reset()
@@ -124,17 +146,21 @@ class KeyGestureResolver(
             val deltaX = event.x - startX
             val deltaY = event.y - startY
 
-            // 动态横向漂移上限计算 (QWERTY 容许大漂移，T9 更严格)
+            // 动态横向漂移上限计算 (18键与QWERTY均放宽横向容差，支持人手大拇指 55° 斜滑)
             val driftLimit = max(
-                thresholdPx * (if (isT9) 0.9f else 2.5f),
-                abs(deltaY) * (if (isT9) 0.75f else 1.2f)
+                thresholdPx * (if (isCurrent18Key) 2.8f else if (isT9) 0.9f else 2.5f),
+                abs(deltaY) * (if (isCurrent18Key) 1.5f else if (isT9) 0.75f else 1.2f)
             )
 
-            // 下滑判定: 纵向位移超过阈值且横向未超容差
-            if (deltaY >= thresholdPx && abs(deltaX) <= driftLimit) {
+            // 下滑判定: 纵向位移超过阈值，或快速轻弹(ACTION_UP且达75%阈值)，且横向未超容差
+            val isFlick = actionMasked == MotionEvent.ACTION_UP &&
+                deltaY >= thresholdPx * 0.75f &&
+                abs(deltaX) <= driftLimit
+
+            if ((deltaY >= thresholdPx || isFlick) && abs(deltaX) <= driftLimit) {
                 val actionToExecute = boundAction
                 triggered = true
-                Log.i("Gesture triggered: action=${actionToExecute.title}, deltaY=$deltaY, threshold=$thresholdPx")
+                Log.i("Gesture triggered: action=${actionToExecute.title}, deltaY=$deltaY, threshold=$thresholdPx, isFlick=$isFlick")
 
                 // 1. 发送 ACTION_CANCEL 中止原生按键事件 (优先回调原方法派发 CANCEL)
                 if (cancelNative != null) {
@@ -144,7 +170,13 @@ class KeyGestureResolver(
                 }
 
                 // 2. 键盘触觉反馈
-                val vibrate = if (isT9) WeTypeSettings.isT9GestureVibrationXposed() else WeTypeSettings.isGestureVibrationXposed()
+                val vibrate = if (isCurrent18Key) {
+                    WeTypeSettings.isLayout18KeyGestureVibrationXposed()
+                } else if (isT9) {
+                    WeTypeSettings.isT9GestureVibrationXposed()
+                } else {
+                    WeTypeSettings.isGestureVibrationXposed()
+                }
                 if (vibrate) {
                     runCatching {
                         view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
@@ -394,6 +426,142 @@ class KeyGestureResolver(
             }
 
             return KeyAccessor(getter, mainTextM, floatTextM, idM)
+        }
+
+        @Volatile
+        private var last18KeyActiveTime = 0L
+
+        fun mark18KeyActive() {
+            last18KeyActiveTime = System.currentTimeMillis()
+        }
+
+        fun is18KeySessionActive(): Boolean {
+            return (System.currentTimeMillis() - last18KeyActiveTime) < 15_000L
+        }
+
+        fun is18KeyContext(view: View?, keyContext: Any?): Boolean {
+            if (keyContext != null && resolve18KeyId(keyContext)?.startsWith("zh_18key", ignoreCase = true) == true) {
+                mark18KeyActive()
+                return true
+            }
+            if (view != null && is18KeyView(view)) {
+                mark18KeyActive()
+                return true
+            }
+            if (is18KeySessionActive()) {
+                val idOrText = resolve18KeyId(keyContext) ?: (keyContext as? View)?.tag?.toString()
+                if (idOrText != null) {
+                    val norm = normalize18KeyName(idOrText)
+                    if (norm == "space") return true
+                }
+            }
+            return false
+        }
+
+        fun is18KeyView(view: View): Boolean {
+            if (is18KeyClass(view.javaClass)) return true
+            var parent = view.parent
+            repeat(8) {
+                val parentView = parent as? View ?: return false
+                if (is18KeyClass(parentView.javaClass)) return true
+                parent = parentView.parent
+            }
+            return false
+        }
+
+        private fun is18KeyClass(clazz: Class<*>): Boolean {
+            val name = clazz.name.lowercase(Locale.ROOT)
+            return name.contains("doublepin") || name.contains("18key")
+        }
+
+        fun resolve18KeyId(keyContext: Any?): String? {
+            if (keyContext == null) return null
+            val clazz = keyContext.javaClass
+            val accessor = accessorCache.getOrPut(clazz) { buildAccessor(clazz) }
+            accessor.idMethod?.let { m ->
+                runCatching { m.invoke(keyContext) as? String }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+            }
+            val keyData = accessor.keyDataGetter?.invoke(keyContext)
+            if (keyData != null) {
+                val kdClass = keyData.javaClass
+                val kdAccessor = accessorCache.getOrPut(kdClass) { buildAccessor(kdClass) }
+                kdAccessor.idMethod?.let { m ->
+                    runCatching { m.invoke(keyData) as? String }.getOrNull()?.takeIf { it.isNotEmpty() }?.let { return it }
+                }
+            }
+            return null
+        }
+
+        fun resolve18KeyName(keyContext: Any?): String? {
+            if (keyContext == null) return null
+            if (keyContext is TextView) {
+                val text = keyContext.text?.toString()
+                if (!text.isNullOrEmpty()) {
+                    normalize18KeyName(text)?.let { return it }
+                }
+            }
+            val clazz = keyContext.javaClass
+            val accessor = accessorCache.getOrPut(clazz) { buildAccessor(clazz) }
+            fun checkTarget(target: Any, a: KeyAccessor): String? {
+                a.idMethod?.let { m ->
+                    runCatching { m.invoke(target) as? String }.getOrNull()?.let { id ->
+                        normalize18KeyName(id)?.let { return it }
+                    }
+                }
+                a.mainTextMethod?.let { m ->
+                    runCatching { m.invoke(target) as? String }.getOrNull()?.let { text ->
+                        normalize18KeyName(text)?.let { return it }
+                    }
+                }
+                return null
+            }
+            checkTarget(keyContext, accessor)?.let { return it }
+            val keyData = accessor.keyDataGetter?.invoke(keyContext)
+            if (keyData != null) {
+                checkTarget(keyData, accessorCache.getOrPut(keyData.javaClass) { buildAccessor(keyData.javaClass) })?.let { return it }
+            }
+            if (keyContext is View) {
+                keyContext.tag?.toString()?.let { tag ->
+                    normalize18KeyName(tag)?.let { return it }
+                }
+            }
+            return null
+        }
+
+        fun normalize18KeyName(rawIdOrText: String): String? {
+            val trimmed = rawIdOrText.trim().lowercase(Locale.ROOT)
+            if (trimmed.startsWith("zh_18key")) {
+                return when (trimmed) {
+                    "zh_18key1_1" -> "q"
+                    "zh_18key1_2" -> "we"
+                    "zh_18key1_3" -> "rt"
+                    "zh_18key1_4" -> "y"
+                    "zh_18key1_5" -> "u"
+                    "zh_18key1_6" -> "io"
+                    "zh_18key1_7" -> "p"
+                    "zh_18key2_1" -> "a"
+                    "zh_18key2_2" -> "sd"
+                    "zh_18key2_3" -> "fg"
+                    "zh_18key2_4" -> "h"
+                    "zh_18key2_5" -> "jk"
+                    "zh_18key2_6" -> "l"
+                    "zh_18key3_1" -> "z"
+                    "zh_18key3_2" -> "xc"
+                    "zh_18key3_3" -> "v"
+                    "zh_18key3_4" -> "bn"
+                    "zh_18key3_5" -> "m"
+                    else -> null
+                }
+            }
+            val clean = trimmed.replace(" ", "")
+            val valid18Keys = setOf(
+                "q", "we", "rt", "y", "u", "io", "p",
+                "a", "sd", "fg", "h", "jk", "l",
+                "z", "xc", "v", "bn", "m", "space"
+            )
+            if (clean in valid18Keys) return clean
+            if (clean == "空格" || clean == "spacebar") return "space"
+            return null
         }
     }
 }

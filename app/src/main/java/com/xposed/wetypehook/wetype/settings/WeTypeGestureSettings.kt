@@ -64,4 +64,34 @@ object WeTypeGestureSettings {
         }
         return obj.toString()
     }
+
+    fun parse18KeyBindings(json: String?): Map<String, GestureAction> {
+        if (json.isNullOrEmpty()) return GestureAction.default18KeyBindings
+        return runCatching {
+            val obj = JSONObject(json)
+            val result = mutableMapOf<String, GestureAction>()
+            val keys = obj.keys()
+            while (keys.hasNext()) {
+                val key = keys.next()
+                if (key.isNotEmpty()) {
+                    val normalizedKey = key.trim().lowercase()
+                    val action = GestureAction.fromId(obj.getInt(key))
+                    if (action != GestureAction.None) {
+                        result[normalizedKey] = action
+                    }
+                }
+            }
+            result
+        }.getOrDefault(GestureAction.default18KeyBindings)
+    }
+
+    fun serialize18KeyBindings(map: Map<String, GestureAction>): String {
+        val obj = JSONObject()
+        map.forEach { (key, action) ->
+            if (action != GestureAction.None) {
+                obj.put(key.trim().lowercase(), action.id)
+            }
+        }
+        return obj.toString()
+    }
 }

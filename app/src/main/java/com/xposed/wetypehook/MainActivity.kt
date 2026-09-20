@@ -552,11 +552,17 @@ private fun WeTypeSettingsScreen(
     var t9GestureEnabled by rememberSaveable {
         mutableStateOf(snapshot.t9GestureEnabled)
     }
+    var layout18KeyGestureEnabled by rememberSaveable {
+        mutableStateOf(snapshot.layout18KeyGestureEnabled)
+    }
     var gestureThreshold by rememberSaveable {
         mutableIntStateOf(snapshot.gestureThreshold)
     }
     var t9GestureThreshold by rememberSaveable {
         mutableIntStateOf(snapshot.t9GestureThreshold)
+    }
+    var layout18KeyGestureThreshold by rememberSaveable {
+        mutableIntStateOf(snapshot.layout18KeyGestureThreshold)
     }
     var gestureVibration by rememberSaveable {
         mutableStateOf(snapshot.gestureVibration)
@@ -564,8 +570,14 @@ private fun WeTypeSettingsScreen(
     var t9GestureVibration by rememberSaveable {
         mutableStateOf(snapshot.t9GestureVibration)
     }
+    var layout18KeyGestureVibration by rememberSaveable {
+        mutableStateOf(snapshot.layout18KeyGestureVibration)
+    }
     var gestureBindingsJson by rememberSaveable {
         mutableStateOf(snapshot.gestureBindingsJson)
+    }
+    var layout18KeyGestureBindingsJson by rememberSaveable {
+        mutableStateOf(snapshot.layout18KeyGestureBindingsJson)
     }
     var showGestureKeyLabels by rememberSaveable {
         mutableStateOf(snapshot.showGestureKeyLabels)
@@ -764,11 +776,15 @@ private fun WeTypeSettingsScreen(
             clipboardImageMaxSizeMb = clipboardImageMaxSizeMb,
             qwertyGestureEnabled = qwertyGestureEnabled,
             t9GestureEnabled = t9GestureEnabled,
+            layout18KeyGestureEnabled = layout18KeyGestureEnabled,
             gestureThreshold = gestureThreshold,
             t9GestureThreshold = t9GestureThreshold,
+            layout18KeyGestureThreshold = layout18KeyGestureThreshold,
             gestureVibration = gestureVibration,
             t9GestureVibration = t9GestureVibration,
+            layout18KeyGestureVibration = layout18KeyGestureVibration,
             gestureBindingsJson = gestureBindingsJson,
+            layout18KeyGestureBindingsJson = layout18KeyGestureBindingsJson,
             showGestureKeyLabels = showGestureKeyLabels,
             gestureLabelTextSizeSp = gestureLabelTextSizeSp,
             gestureLabelAlpha = gestureLabelAlpha,
@@ -820,7 +836,6 @@ private fun WeTypeSettingsScreen(
         toolbarIconBgOpacity = WeTypeSettings.DEFAULT_TOOLBAR_ICON_BG_OPACITY
         disableHotUpdate = WeTypeSettings.DEFAULT_DISABLE_HOT_UPDATE
         beautificationEnabled = WeTypeSettings.DEFAULT_BEAUTIFICATION_ENABLED
-        layout18KeyEnabled = WeTypeSettings.DEFAULT_LAYOUT_18KEY_ENABLED
         showCrossDeviceClipboard = WeTypeSettings.DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD
         removeClipboardRetentionLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT
         removeClipboardTextLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT
@@ -833,11 +848,15 @@ private fun WeTypeSettingsScreen(
         clipboardImageMaxSizeMb = WeTypeSettings.DEFAULT_CLIPBOARD_IMAGE_MAX_SIZE_MB
         qwertyGestureEnabled = WeTypeSettings.DEFAULT_QWERTY_GESTURE_ENABLED
         t9GestureEnabled = WeTypeSettings.DEFAULT_T9_GESTURE_ENABLED
+        layout18KeyGestureEnabled = WeTypeSettings.DEFAULT_18KEY_GESTURE_ENABLED
         gestureThreshold = WeTypeSettings.DEFAULT_GESTURE_THRESHOLD
         t9GestureThreshold = WeTypeSettings.DEFAULT_T9_GESTURE_THRESHOLD
+        layout18KeyGestureThreshold = WeTypeSettings.DEFAULT_18KEY_GESTURE_THRESHOLD
         gestureVibration = WeTypeSettings.DEFAULT_GESTURE_VIBRATION
         t9GestureVibration = WeTypeSettings.DEFAULT_T9_GESTURE_VIBRATION
+        layout18KeyGestureVibration = WeTypeSettings.DEFAULT_18KEY_GESTURE_VIBRATION
         gestureBindingsJson = WeTypeSettings.DEFAULT_GESTURE_BINDINGS_JSON
+        layout18KeyGestureBindingsJson = WeTypeSettings.DEFAULT_18KEY_GESTURE_BINDINGS_JSON
         showGestureKeyLabels = WeTypeSettings.DEFAULT_SHOW_GESTURE_KEY_LABELS
         gestureLabelTextSizeSp = WeTypeSettings.DEFAULT_GESTURE_LABEL_TEXT_SIZE_SP
         gestureLabelAlpha = WeTypeSettings.DEFAULT_GESTURE_LABEL_ALPHA
@@ -855,6 +874,7 @@ private fun WeTypeSettingsScreen(
         logoImageType = WeTypeSettings.DEFAULT_LOGO_IMAGE_TYPE
         logoSvgRecolorEnabled = WeTypeSettings.DEFAULT_LOGO_SVG_RECOLOR_ENABLED
         fontMode = WeTypeSettings.DEFAULT_FONT_MODE
+        layout18KeyEnabled = WeTypeSettings.DEFAULT_LAYOUT_18KEY_ENABLED
         glassInput.indices.forEach { glassInput[it] = "" }
         previewGlassOverrides = GlassMaterialOverrides()
         hyperMaterialEnabled = WeTypeSettings.DEFAULT_HYPER_MATERIAL_ENABLED
@@ -1035,14 +1055,20 @@ private fun WeTypeSettingsScreen(
                         onQwertyGestureEnabledChange = { qwertyGestureEnabled = it },
                         t9GestureEnabled = t9GestureEnabled,
                         onT9GestureEnabledChange = { t9GestureEnabled = it },
+                        layout18KeyGestureEnabled = layout18KeyGestureEnabled,
+                        onLayout18KeyGestureEnabledChange = { layout18KeyGestureEnabled = it },
                         gestureVibration = gestureVibration,
                         onGestureVibrationChange = { gestureVibration = it },
                         t9GestureVibration = t9GestureVibration,
                         onT9GestureVibrationChange = { t9GestureVibration = it },
+                        layout18KeyGestureVibration = layout18KeyGestureVibration,
+                        onLayout18KeyGestureVibrationChange = { layout18KeyGestureVibration = it },
                         gestureThreshold = gestureThreshold,
                         onGestureThresholdChange = { gestureThreshold = it },
                         t9GestureThreshold = t9GestureThreshold,
                         onT9GestureThresholdChange = { t9GestureThreshold = it },
+                        layout18KeyGestureThreshold = layout18KeyGestureThreshold,
+                        onLayout18KeyGestureThresholdChange = { layout18KeyGestureThreshold = it },
                         showGestureKeyLabels = showGestureKeyLabels,
                         onShowGestureKeyLabelsChange = { showGestureKeyLabels = it },
                         gestureLabelTextSizeSp = gestureLabelTextSizeSp,
@@ -1060,7 +1086,9 @@ private fun WeTypeSettingsScreen(
                         gestureLabelMarginRightDp = gestureLabelMarginRightDp,
                         onGestureLabelMarginRightDpChange = { gestureLabelMarginRightDp = it },
                         gestureBindingsJson = gestureBindingsJson,
-                        onGestureBindingsJsonChange = { gestureBindingsJson = it }
+                        onGestureBindingsJsonChange = { gestureBindingsJson = it },
+                        layout18KeyGestureBindingsJson = layout18KeyGestureBindingsJson,
+                        onLayout18KeyGestureBindingsJsonChange = { layout18KeyGestureBindingsJson = it }
                     )
                 }
 
@@ -1332,7 +1360,7 @@ private fun LazyListScope.AppearanceTabContent(
     beautificationEnabled: Boolean,
     onBeautificationEnabledChange: (Boolean) -> Unit
 ) {
-    // 0. 界面美化总开关
+    // 0. 美化总开关
     item {
         Card(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -2455,14 +2483,20 @@ private fun LazyListScope.GestureTabContent(
     onQwertyGestureEnabledChange: (Boolean) -> Unit,
     t9GestureEnabled: Boolean,
     onT9GestureEnabledChange: (Boolean) -> Unit,
+    layout18KeyGestureEnabled: Boolean,
+    onLayout18KeyGestureEnabledChange: (Boolean) -> Unit,
     gestureVibration: Boolean,
     onGestureVibrationChange: (Boolean) -> Unit,
     t9GestureVibration: Boolean,
     onT9GestureVibrationChange: (Boolean) -> Unit,
+    layout18KeyGestureVibration: Boolean,
+    onLayout18KeyGestureVibrationChange: (Boolean) -> Unit,
     gestureThreshold: Int,
     onGestureThresholdChange: (Int) -> Unit,
     t9GestureThreshold: Int,
     onT9GestureThresholdChange: (Int) -> Unit,
+    layout18KeyGestureThreshold: Int,
+    onLayout18KeyGestureThresholdChange: (Int) -> Unit,
     showGestureKeyLabels: Boolean,
     onShowGestureKeyLabelsChange: (Boolean) -> Unit,
     gestureLabelTextSizeSp: Int,
@@ -2480,7 +2514,9 @@ private fun LazyListScope.GestureTabContent(
     gestureLabelMarginRightDp: Int,
     onGestureLabelMarginRightDpChange: (Int) -> Unit,
     gestureBindingsJson: String,
-    onGestureBindingsJsonChange: (String) -> Unit
+    onGestureBindingsJsonChange: (String) -> Unit,
+    layout18KeyGestureBindingsJson: String,
+    onLayout18KeyGestureBindingsJsonChange: (String) -> Unit
 ) {
     // 1. 手势总控卡片
     item {
@@ -2503,6 +2539,12 @@ private fun LazyListScope.GestureTabContent(
                     onCheckedChange = onT9GestureEnabledChange
                 )
                 MiuixSwitchWidget(
+                    title = "启用 18 键双拼下滑手势",
+                    description = "18 键双拼按键向下滑动触发绑定动作 (默认 Z/XC/BN/V)",
+                    checked = layout18KeyGestureEnabled,
+                    onCheckedChange = onLayout18KeyGestureEnabledChange
+                )
+                MiuixSwitchWidget(
                     title = "QWERTY 手势触觉反馈",
                     description = "26 键手势触发时调用键盘触觉振动",
                     checked = gestureVibration,
@@ -2513,6 +2555,12 @@ private fun LazyListScope.GestureTabContent(
                     description = "九宫格手势触发时调用键盘触觉振动",
                     checked = t9GestureVibration,
                     onCheckedChange = onT9GestureVibrationChange
+                )
+                MiuixSwitchWidget(
+                    title = "18 键双拼手势触觉反馈",
+                    description = "18 键双拼手势触发时调用键盘触觉振动",
+                    checked = layout18KeyGestureVibration,
+                    onCheckedChange = onLayout18KeyGestureVibrationChange
                 )
             }
         }
@@ -2537,6 +2585,12 @@ private fun LazyListScope.GestureTabContent(
                     value = t9GestureThreshold,
                     max = 48,
                     onValueChange = { onT9GestureThresholdChange(it.coerceIn(10, 48)) }
+                )
+                SliderPreferenceItem(
+                    title = "18 键触发滑动阈值: ${layout18KeyGestureThreshold} dp",
+                    value = layout18KeyGestureThreshold,
+                    max = 48,
+                    onValueChange = { onLayout18KeyGestureThresholdChange(it.coerceIn(10, 48)) }
                 )
             }
         }
@@ -2650,7 +2704,9 @@ private fun LazyListScope.GestureTabContent(
         ) {
             GestureKeyBindingEditor(
                 bindingsJson = gestureBindingsJson,
-                onBindingsChange = onGestureBindingsJsonChange
+                onBindingsChange = onGestureBindingsJsonChange,
+                bindings18KeyJson = layout18KeyGestureBindingsJson,
+                onBindings18KeyChange = onLayout18KeyGestureBindingsJsonChange
             )
         }
     }
@@ -2659,11 +2715,15 @@ private fun LazyListScope.GestureTabContent(
 @Composable
 private fun GestureKeyBindingEditor(
     bindingsJson: String,
-    onBindingsChange: (String) -> Unit
+    onBindingsChange: (String) -> Unit,
+    bindings18KeyJson: String,
+    onBindings18KeyChange: (String) -> Unit
 ) {
     var selectedKeyboardTab by rememberSaveable { mutableIntStateOf(0) }
     var editingKey by remember { mutableStateOf<Char?>(null) }
+    var editingKey18 by remember { mutableStateOf<String?>(null) }
     val bindings = remember(bindingsJson) { WeTypeGestureSettings.parseBindings(bindingsJson) }
+    val bindings18Key = remember(bindings18KeyJson) { WeTypeGestureSettings.parse18KeyBindings(bindings18KeyJson) }
     val context = LocalContext.current
 
     Column(
@@ -2671,7 +2731,7 @@ private fun GestureKeyBindingEditor(
             .fillMaxWidth()
             .padding(16.dp)
     ) {
-        // Tab 切换：26键 (QWERTY) 与 九宫格 (T9)
+        // Tab 切换：26键 (QWERTY)、九宫格 (T9)、18 键 (双拼)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -2714,108 +2774,206 @@ private fun GestureKeyBindingEditor(
                     fontWeight = if (selectedKeyboardTab == 1) FontWeight.Bold else FontWeight.Normal
                 )
             }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (selectedKeyboardTab == 2) MiuixTheme.colorScheme.primary.copy(alpha = 0.15f)
+                        else MiuixTheme.colorScheme.surfaceContainerHigh
+                    )
+                    .clickable { selectedKeyboardTab = 2 }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "18 键",
+                    style = MiuixTheme.textStyles.main,
+                    color = if (selectedKeyboardTab == 2) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface,
+                    fontWeight = if (selectedKeyboardTab == 2) FontWeight.Bold else FontWeight.Normal
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        if (selectedKeyboardTab == 0) {
-            val row1 = listOf('q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p')
-            val row2 = listOf('a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l')
-            val row3 = listOf('z', 'x', 'c', 'v', 'b', 'n', 'm')
+        when (selectedKeyboardTab) {
+            0 -> {
+                val row1 = listOf('q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p')
+                val row2 = listOf('a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l')
+                val row3 = listOf('z', 'x', 'c', 'v', 'b', 'n', 'm')
 
-            // Row 1
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                row1.forEach { char ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        GestureKeyButton(
-                            keyLabel = char.uppercaseChar().toString(),
-                            action = bindings[char] ?: GestureAction.None,
-                            onClick = { editingKey = char }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Row 2
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                row2.forEach { char ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        GestureKeyButton(
-                            keyLabel = char.uppercaseChar().toString(),
-                            action = bindings[char] ?: GestureAction.None,
-                            onClick = { editingKey = char }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Row 3
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 28.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                row3.forEach { char ->
-                    Box(modifier = Modifier.weight(1f)) {
-                        GestureKeyButton(
-                            keyLabel = char.uppercaseChar().toString(),
-                            action = bindings[char] ?: GestureAction.None,
-                            onClick = { editingKey = char }
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Row 4: Space
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 40.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    GestureKeyButton(
-                        keyLabel = "空格 (Space)",
-                        action = bindings[' '] ?: GestureAction.None,
-                        onClick = { editingKey = ' ' }
-                    )
-                }
-            }
-        } else {
-            val t9Rows = listOf(
-                listOf('1', '2', '3'),
-                listOf('4', '5', '6'),
-                listOf('7', '8', '9')
-            )
-            t9Rows.forEachIndexed { index, row ->
+                // Row 1
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    row.forEach { char ->
+                    row1.forEach { char ->
                         Box(modifier = Modifier.weight(1f)) {
                             GestureKeyButton(
-                                keyLabel = char.toString(),
+                                keyLabel = char.uppercaseChar().toString(),
                                 action = bindings[char] ?: GestureAction.None,
                                 onClick = { editingKey = char }
                             )
                         }
                     }
                 }
-                if (index < t9Rows.size - 1) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 2
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    row2.forEach { char ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            GestureKeyButton(
+                                keyLabel = char.uppercaseChar().toString(),
+                                action = bindings[char] ?: GestureAction.None,
+                                onClick = { editingKey = char }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 3
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    row3.forEach { char ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            GestureKeyButton(
+                                keyLabel = char.uppercaseChar().toString(),
+                                action = bindings[char] ?: GestureAction.None,
+                                onClick = { editingKey = char }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 4: Space
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        GestureKeyButton(
+                            keyLabel = "空格 (Space)",
+                            action = bindings[' '] ?: GestureAction.None,
+                            onClick = { editingKey = ' ' }
+                        )
+                    }
+                }
+            }
+            1 -> {
+                val t9Rows = listOf(
+                    listOf('1', '2', '3'),
+                    listOf('4', '5', '6'),
+                    listOf('7', '8', '9')
+                )
+                t9Rows.forEachIndexed { index, row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        row.forEach { char ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                GestureKeyButton(
+                                    keyLabel = char.toString(),
+                                    action = bindings[char] ?: GestureAction.None,
+                                    onClick = { editingKey = char }
+                                )
+                            }
+                        }
+                    }
+                    if (index < t9Rows.size - 1) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+            }
+            2 -> {
+                val r1 = listOf("q", "we", "rt", "y", "u", "io", "p")
+                val r2 = listOf("a", "sd", "fg", "h", "jk", "l")
+                val r3 = listOf("z", "xc", "v", "bn", "m")
+
+                // Row 1 (7 keys)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    r1.forEach { key ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            GestureKeyButton(
+                                keyLabel = labelFor18Key(key),
+                                action = bindings18Key[key] ?: GestureAction.None,
+                                onClick = { editingKey18 = key }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 2 (6 keys)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    r2.forEach { key ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            GestureKeyButton(
+                                keyLabel = labelFor18Key(key),
+                                action = bindings18Key[key] ?: GestureAction.None,
+                                onClick = { editingKey18 = key }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 3 (5 keys)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 28.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    r3.forEach { key ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            GestureKeyButton(
+                                keyLabel = labelFor18Key(key),
+                                action = bindings18Key[key] ?: GestureAction.None,
+                                onClick = { editingKey18 = key }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Row 4: Space
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        GestureKeyButton(
+                            keyLabel = "空格 (Space)",
+                            action = bindings18Key["space"] ?: GestureAction.None,
+                            onClick = { editingKey18 = "space" }
+                        )
+                    }
                 }
             }
         }
@@ -2833,8 +2991,13 @@ private fun GestureKeyBindingEditor(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MiuixTheme.colorScheme.surfaceContainerHigh)
                     .clickable {
-                        onBindingsChange(WeTypeSettings.DEFAULT_GESTURE_BINDINGS_JSON)
-                        Toast.makeText(context, "已恢复默认预设 (Z=全选 / X=剪切 / C=复制 / V=粘贴)", Toast.LENGTH_SHORT).show()
+                        if (selectedKeyboardTab == 2) {
+                            onBindings18KeyChange(WeTypeSettings.DEFAULT_18KEY_GESTURE_BINDINGS_JSON)
+                            Toast.makeText(context, "已恢复 18 键默认预设 (Z=全选 / XC=剪切 / BN=复制 / V=粘贴)", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onBindingsChange(WeTypeSettings.DEFAULT_GESTURE_BINDINGS_JSON)
+                            Toast.makeText(context, "已恢复默认预设 (Z=全选 / X=剪切 / C=复制 / V=粘贴)", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
@@ -2852,8 +3015,13 @@ private fun GestureKeyBindingEditor(
                     .clip(RoundedCornerShape(8.dp))
                     .background(MiuixTheme.colorScheme.surfaceContainerHigh)
                     .clickable {
-                        onBindingsChange(WeTypeGestureSettings.serializeBindings(emptyMap()))
-                        Toast.makeText(context, "已清空所有按键手势绑定", Toast.LENGTH_SHORT).show()
+                        if (selectedKeyboardTab == 2) {
+                            onBindings18KeyChange(WeTypeGestureSettings.serialize18KeyBindings(emptyMap()))
+                            Toast.makeText(context, "已清空 18 键手势绑定", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onBindingsChange(WeTypeGestureSettings.serializeBindings(emptyMap()))
+                            Toast.makeText(context, "已清空所有按键手势绑定", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center
@@ -2868,7 +3036,7 @@ private fun GestureKeyBindingEditor(
         }
     }
 
-    // 动作选择对话框
+    // QWERTY / T9 动作选择对话框
     editingKey?.let { targetChar ->
         val currentAction = bindings[targetChar] ?: GestureAction.None
         val keyName = if (targetChar == ' ') "空格 (Space)" else targetChar.uppercaseChar().toString()
@@ -2889,7 +3057,7 @@ private fun GestureKeyBindingEditor(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "选择下滑此按键时触发的操作 (共 24 种动作)",
+                        text = "选择下滑此按键时触发的操作 (共 25 种动作)",
                         style = MiuixTheme.textStyles.body2,
                         color = MiuixTheme.colorScheme.onSurfaceVariantSummary
                     )
@@ -2973,6 +3141,125 @@ private fun GestureKeyBindingEditor(
             }
         }
     }
+
+    // 18 键动作选择对话框
+    editingKey18?.let { targetKey ->
+        val currentAction = bindings18Key[targetKey] ?: GestureAction.None
+        val keyName = labelFor18Key(targetKey)
+        val scrollState = rememberScrollState()
+
+        Dialog(onDismissRequest = { editingKey18 = null }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                insideMargin = PaddingValues(16.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "设置按键 [$keyName] 下滑动作",
+                        style = MiuixTheme.textStyles.title4,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "选择下滑此按键时触发的操作 (共 25 种动作)",
+                        style = MiuixTheme.textStyles.body2,
+                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                            .verticalScroll(scrollState)
+                    ) {
+                        GestureAction.entries.forEach { action ->
+                            val isSelected = action == currentAction
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (isSelected) MiuixTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else ComposeColor.Transparent
+                                    )
+                                    .clickable {
+                                        val newMap = bindings18Key.toMutableMap()
+                                        if (action == GestureAction.None) {
+                                            newMap.remove(targetKey)
+                                        } else {
+                                            newMap[targetKey] = action
+                                        }
+                                        onBindings18KeyChange(WeTypeGestureSettings.serialize18KeyBindings(newMap))
+                                        editingKey18 = null
+                                        Toast.makeText(context, "[$keyName] 已绑定: ${action.title}", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "${action.id}. ${action.title}",
+                                        style = MiuixTheme.textStyles.main,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) MiuixTheme.colorScheme.primary else MiuixTheme.colorScheme.onSurface
+                                    )
+                                    if (action.shortTitle.isNotEmpty() && action.shortTitle != "\\") {
+                                        Text(
+                                            text = "按键标签: ${action.shortTitle}",
+                                            style = MiuixTheme.textStyles.body2,
+                                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                                        )
+                                    }
+                                }
+                                if (isSelected) {
+                                    Text(
+                                        text = "✓",
+                                        style = MiuixTheme.textStyles.title4,
+                                        color = MiuixTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { editingKey18 = null }
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = "取消",
+                                style = MiuixTheme.textStyles.main,
+                                color = MiuixTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun labelFor18Key(key: String): String = when (key) {
+    "we" -> "W E"
+    "rt" -> "R T"
+    "io" -> "I O"
+    "sd" -> "S D"
+    "fg" -> "F G"
+    "jk" -> "J K"
+    "xc" -> "X C"
+    "bn" -> "B N"
+    "space" -> "空格 (Space)"
+    else -> key.uppercase()
 }
 
 @Composable
