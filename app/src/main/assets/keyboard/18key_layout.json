@@ -1,0 +1,4255 @@
+{
+  "config": {
+    "name": [
+      0,
+      0,
+      0
+    ],
+    "vWidth": [
+      1080,
+      2156,
+      1080
+    ],
+    "vHeight": [
+      628,
+      452,
+      628
+    ],
+    "isT9": [
+      true,
+      true,
+      true
+    ],
+    "gravity": [
+      0,
+      0,
+      0
+    ],
+    "lineGapWidth": [
+      88,
+      80,
+      88
+    ],
+    "lineGapHeight": [
+      68,
+      64,
+      68
+    ],
+    "line": [
+      4,
+      4,
+      4
+    ],
+    "lineHeight": [
+      140,
+      140,
+      140,
+      140
+    ],
+    "lineHeightLandscape": [
+      97,
+      97,
+      97,
+      97
+    ],
+    "lineGapHeights": [
+      10,
+      8,
+      8,
+      8,
+      10
+    ],
+    "lineGapHeightsLandscape": [
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "lineGap": [
+      0,
+      0,
+      0
+    ],
+    "paddingLeft": [
+      0,
+      0,
+      0
+    ],
+    "paddingRight": [
+      0,
+      0,
+      0
+    ],
+    "paddingTop": [
+      0,
+      0,
+      0
+    ],
+    "paddingBottom": [
+      0,
+      0,
+      0
+    ],
+    "marginLeft": [
+      0,
+      0,
+      0
+    ],
+    "marginRight": [
+      0,
+      0,
+      0
+    ],
+    "marginTop": [
+      2,
+      0,
+      0
+    ],
+    "marginBottom": [
+      0,
+      0,
+      0
+    ],
+    "swipeable": [
+      true,
+      true,
+      true
+    ],
+    "lineAlign": [
+      null,
+      3,
+      null,
+      3
+    ]
+  },
+  "keyDefaultConfig": {
+    "id": [
+      "",
+      "",
+      ""
+    ],
+    "type": [
+      1,
+      1,
+      1
+    ],
+    "drawerType": [
+      "normalType",
+      "normalType",
+      "normalType"
+    ],
+    "clickable": [
+      true,
+      true,
+      true
+    ],
+    "longClickable": [
+      false,
+      false,
+      false
+    ],
+    "swipeable": [
+      false,
+      false,
+      false
+    ],
+    "iconColor": [
+      "@attr/ime_color_btn_white_text",
+      "@attr/ime_color_btn_white_text",
+      "@attr/ime_color_btn_white_text"
+    ]
+  },
+  "keys": [
+    [
+      {
+        "id": [
+          "ZH_18key1_1",
+          "ZH_18key1_1",
+          "ZH_18key1_1"
+        ],
+        "mainText": [
+          "Q",
+          "Q",
+          "Q"
+        ],
+        "floatText": [
+          "#",
+          "#",
+          "#"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_2",
+          "ZH_18key1_2",
+          "ZH_18key1_2"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "",
+          "",
+          ""
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "W E",
+          "W E",
+          "W E"
+        ],
+        "floatText": [
+          "1",
+          "1",
+          "1"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_3",
+          "ZH_18key1_3",
+          "ZH_18key1_3"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "",
+          "",
+          ""
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "R T",
+          "R T",
+          "R T"
+        ],
+        "floatText": [
+          "2",
+          "2",
+          "2"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_4",
+          "ZH_18key1_4",
+          "ZH_18key1_4"
+        ],
+        "mainText": [
+          "Y",
+          "Y",
+          "Y"
+        ],
+        "floatText": [
+          "3",
+          "3",
+          "3"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_5",
+          "ZH_18key1_5",
+          "ZH_18key1_5"
+        ],
+        "mainText": [
+          "U",
+          "U",
+          "U"
+        ],
+        "floatText": [
+          "/",
+          "/",
+          "/"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_6",
+          "ZH_18key1_6",
+          "ZH_18key1_6"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "I O",
+          "I O",
+          "I O"
+        ],
+        "floatText": [
+          "-",
+          "-",
+          "-"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key1_7",
+          "ZH_18key1_7",
+          "ZH_18key1_7"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          12,
+          12,
+          12
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "P",
+          "P",
+          "P"
+        ],
+        "floatText": [
+          "_",
+          "_",
+          "_"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      }
+    ],
+    [
+      {
+        "id": [
+          "ZH_18key2_1",
+          "ZH_18key2_1",
+          "ZH_18key2_1"
+        ],
+        "mainText": [
+          "A",
+          "A",
+          "A"
+        ],
+        "floatText": [
+          "!",
+          "!",
+          "!"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "leftMargin": [
+          59,
+          59,
+          59
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key2_2",
+          "ZH_18key2_2",
+          "ZH_18key2_2"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "S D",
+          "S D",
+          "S D"
+        ],
+        "floatText": [
+          "4",
+          "4",
+          "4"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key2_3",
+          "ZH_18key2_3",
+          "ZH_18key2_3"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "F G",
+          "F G",
+          "F G"
+        ],
+        "floatText": [
+          "5",
+          "5",
+          "5"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key2_4",
+          "ZH_18key2_4",
+          "ZH_18key2_4"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "H",
+          "H",
+          "H"
+        ],
+        "floatText": [
+          "6",
+          "6",
+          "6"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key2_5",
+          "ZH_18key2_5",
+          "ZH_18key2_5"
+        ],
+        "mainText": [
+          "J K",
+          "J K",
+          "J K"
+        ],
+        "floatText": [
+          "(",
+          "(",
+          "("
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          153,
+          153,
+          153
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key2_6",
+          "ZH_18key2_6",
+          "ZH_18key2_6"
+        ],
+        "mainText": [
+          "L",
+          "L",
+          "L"
+        ],
+        "floatText": [
+          "?",
+          "?",
+          "?"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          118,
+          118,
+          118
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          132,
+          132,
+          132
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "rightMargin": [
+          59,
+          59,
+          59
+        ]
+      }
+    ],
+    [
+      {
+        "id": [
+          "ZH_18key3_0",
+          "ZH_18key3_0",
+          "ZH_18key3_0"
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "drawerType": [
+          "normalType",
+          "normalType",
+          "normalType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          false,
+          false,
+          false
+        ],
+        "swipeable": [
+          false,
+          false,
+          false
+        ],
+        "iconColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "mainTextSize": [
+          44,
+          36,
+          44
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          10,
+          10,
+          10
+        ],
+        "style": [
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton"
+        ],
+        "iconWidth": [
+          78,
+          68,
+          78
+        ],
+        "iconHeight": [
+          78,
+          68,
+          78
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "符号",
+          "符号",
+          "符号"
+        ],
+        "floatText": [
+          "",
+          "",
+          ""
+        ],
+        "width": [
+          140,
+          140,
+          140
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "touchFunctionCode": [
+          4,
+          4,
+          4
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key3_1",
+          "ZH_18key3_1",
+          "ZH_18key3_1"
+        ],
+        "mainText": [
+          "Z",
+          "Z",
+          "Z"
+        ],
+        "floatText": [
+          "@",
+          "@",
+          "@"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          116,
+          116,
+          116
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key3_2",
+          "ZH_18key3_2",
+          "ZH_18key3_2"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "clickable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "iconColor": [
+          "",
+          "",
+          ""
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainText": [
+          "X C",
+          "X C",
+          "X C"
+        ],
+        "floatText": [
+          "7",
+          "7",
+          "7"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "width": [
+          151,
+          151,
+          151
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "touchFunctionCode": [
+          0,
+          0,
+          0
+        ],
+        "clickFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "longClickFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "imgSrc": [
+          "",
+          "",
+          ""
+        ],
+        "isVisible": [
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key3_3",
+          "ZH_18key3_3",
+          "ZH_18key3_3"
+        ],
+        "mainText": [
+          "V",
+          "V",
+          "V"
+        ],
+        "floatText": [
+          "8",
+          "8",
+          "8"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          117,
+          117,
+          117
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key3_4",
+          "ZH_18key3_4",
+          "ZH_18key3_4"
+        ],
+        "mainText": [
+          "B N",
+          "B N",
+          "B N"
+        ],
+        "floatText": [
+          "9",
+          "9",
+          "9"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          151,
+          151,
+          151
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "ZH_18key3_5",
+          "ZH_18key3_5",
+          "ZH_18key3_5"
+        ],
+        "mainText": [
+          "M",
+          "M",
+          "M"
+        ],
+        "floatText": [
+          "0",
+          "0",
+          "0"
+        ],
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "type": [
+          1,
+          1,
+          1
+        ],
+        "swipeable": [
+          true,
+          true,
+          true
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "style": [
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton",
+          "@style/WxImeS1WhiteLargeButton"
+        ],
+        "width": [
+          116,
+          116,
+          116
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          50,
+          50,
+          50
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "delete",
+          "delete",
+          "delete"
+        ],
+        "drawerType": [
+          "imageType",
+          "imageType",
+          "imageType"
+        ],
+        "imgSrc": [
+          "@drawable/icon_keys_delete",
+          "@drawable/icon_keys_delete",
+          "@drawable/icon_keys_delete"
+        ],
+        "imgSrcPressed": [
+          "@drawable/icon_keys_delete_pressed",
+          "@drawable/icon_keys_delete_pressed",
+          "@drawable/icon_keys_delete_pressed"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "iconHeight": [
+          64,
+          60,
+          64
+        ],
+        "iconWidth": [
+          64,
+          60,
+          64
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "touchFunctionCode": [
+          1,
+          1,
+          1
+        ],
+        "style": [
+          "@style/WxImeS1GreySmallButton",
+          "@style/WxImeS1GreySmallButton",
+          "@style/WxImeS1GreySmallButton"
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "width": [
+          140,
+          140,
+          140
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          40,
+          36,
+          40
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "height": [
+          133,
+          133,
+          133
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ],
+        "alignRight": [
+          "S1_key_3",
+          "S1_key_3",
+          "S1_key_3"
+        ]
+      }
+    ],
+    [
+      {
+        "id": [
+          "num",
+          "num",
+          "num"
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "iconWidth": [
+          78,
+          68,
+          78
+        ],
+        "iconHeight": [
+          78,
+          68,
+          78
+        ],
+        "mainText": [
+          "123",
+          "123",
+          "123"
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "touchFunctionCode": [
+          5,
+          5,
+          5
+        ],
+        "style": [
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton"
+        ],
+        "width": [
+          140,
+          140,
+          140
+        ],
+        "bottomPadding": [
+          10,
+          10,
+          10
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          44,
+          36,
+          44
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "height": [
+          125,
+          125,
+          125
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "alignLeft": [
+          "ZH_18key3_0",
+          "ZH_18key3_0",
+          "ZH_18key3_0"
+        ]
+      },
+      {
+        "id": [
+          "S1_recycleview",
+          "S1_recycleview",
+          "S1_recycleview"
+        ],
+        "style": [
+          "@style/WxImeSymbolVerticalScroller",
+          "@style/WxImeSymbolVerticalScroller",
+          "@style/WxImeSymbolVerticalScroller"
+        ],
+        "alignBottom": [
+          "S1_key_7",
+          "S1_key_7",
+          "S1_key_7"
+        ],
+        "topPadding": [
+          8,
+          8,
+          null
+        ],
+        "width": [
+          113,
+          113,
+          113
+        ],
+        "height": [
+          125,
+          125,
+          125
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          40,
+          36,
+          40
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "bottomPadding": [
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "id": [
+          "space",
+          "space",
+          "space"
+        ],
+        "mainTextSize": [
+          44,
+          44,
+          44
+        ],
+        "drawerType": [
+          "floatType",
+          "floatType",
+          "floatType"
+        ],
+        "floatText": null,
+        "floatTextGravity": [
+          2,
+          2,
+          2
+        ],
+        "floatTextMarginTop": [
+          8,
+          8,
+          8
+        ],
+        "floatTextMarginRight": [
+          14,
+          14,
+          14
+        ],
+        "swipeable": null,
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "iconHeight": [
+          64,
+          60,
+          64
+        ],
+        "iconWidth": [
+          64,
+          60,
+          64
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "touchFunctionCode": [
+          6,
+          6,
+          6
+        ],
+        "style": [
+          "@style/WxImeS1WhiteButton",
+          "@style/WxImeS1WhiteButton",
+          "@style/WxImeS1WhiteButton"
+        ],
+        "width": [
+          399,
+          399,
+          399
+        ],
+        "bottomPadding": [
+          10,
+          10,
+          10
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border",
+          "@attr/ime_color_btn_white_border"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text",
+          "@attr/ime_color_btn_white_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed",
+          "@attr/ime_color_btn_white_text_pressed"
+        ],
+        "mainTextLetterSpacing": [
+          1,
+          1,
+          1
+        ],
+        "floatTextSize": [
+          26,
+          23,
+          26
+        ],
+        "floatTextColor": [
+          "@attr/ime_color_07",
+          "@attr/ime_color_07",
+          "@attr/ime_color_07"
+        ],
+        "height": [
+          125,
+          125,
+          125
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "toLeftOf": [
+          "chSwitch",
+          "chSwitch",
+          "chSwitch"
+        ]
+      },
+      {
+        "id": [
+          "chSwitch",
+          "chSwitch",
+          "chSwitch"
+        ],
+        "drawerType": [
+          "switchType",
+          "switchType",
+          "switchType"
+        ],
+        "iconHeight": [
+          64,
+          60,
+          64
+        ],
+        "iconWidth": [
+          64,
+          60,
+          64
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "style": [
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton",
+          "@style/WxImeS1GreyLeastButton"
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "width": [
+          93,
+          93,
+          93
+        ],
+        "bottomPadding": [
+          10,
+          10,
+          10
+        ],
+        "touchFunctionCode": [
+          7,
+          7,
+          7
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/ime_color_btn_white_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press",
+          "@attr/ime_color_btn_white_press"
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextSize": [
+          44,
+          36,
+          44
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "height": [
+          125,
+          125,
+          125
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ],
+        "toLeftOf": [
+          "enter",
+          "enter",
+          "enter"
+        ]
+      },
+      {
+        "id": [
+          "enter",
+          "enter",
+          "enter"
+        ],
+        "mainText": [
+          "换行",
+          "换行",
+          "换行"
+        ],
+        "drawerType": [
+          "normalType",
+          "normalType",
+          "normalType"
+        ],
+        "iconHeight": [
+          64,
+          60,
+          64
+        ],
+        "iconWidth": [
+          64,
+          60,
+          64
+        ],
+        "type": [
+          2,
+          2,
+          2
+        ],
+        "touchFunctionCode": [
+          2,
+          2,
+          2
+        ],
+        "style": [
+          "@style/WxImeS1GreySmallButton",
+          "@style/WxImeS1GreySmallButton",
+          "@style/WxImeS1GreySmallButton"
+        ],
+        "longClickable": [
+          true,
+          true,
+          true
+        ],
+        "mainTextSize": [
+          44,
+          36,
+          44
+        ],
+        "bottomPadding": [
+          10,
+          10,
+          810
+        ],
+        "rightPadding": [
+          8,
+          7,
+          8
+        ],
+        "alignTop": [
+          "",
+          "",
+          ""
+        ],
+        "alignBottom": [
+          "",
+          "",
+          ""
+        ],
+        "width": [
+          186,
+          186,
+          186
+        ],
+        "shadowHeight": [
+          3,
+          3,
+          3
+        ],
+        "bgCorner": [
+          16,
+          16,
+          16
+        ],
+        "bgColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "shadowColor": [
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/ime_color_btn_grey_shadow",
+          "@attr/UN_BW_0_Alpha_0_5"
+        ],
+        "initialColor": [
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg",
+          "@attr/ime_color_btn_grey_bg"
+        ],
+        "isTextBold": [
+          false,
+          false,
+          false
+        ],
+        "mainTextColor": [
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text",
+          "@attr/ime_color_btn_grey_text"
+        ],
+        "mainTextColorPressed": [
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed",
+          "@attr/ime_color_btn_grey_text_pressed"
+        ],
+        "pressMaskColor": [
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg",
+          "@attr/ime_color_btn_white_bg"
+        ],
+        "borderColor": [
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border",
+          "@attr/ime_color_btn_grey_border"
+        ],
+        "height": [
+          125,
+          125,
+          125
+        ],
+        "leftPadding": [
+          8,
+          7,
+          8
+        ],
+        "topPadding": [
+          8,
+          8,
+          8
+        ]
+      }
+    ]
+  ]
+}

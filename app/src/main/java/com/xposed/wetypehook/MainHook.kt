@@ -24,6 +24,7 @@ import android.widget.LinearLayout
 import com.xposed.wetypehook.wetype.hook.WeTypeClipboardHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeGestureHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeKeyLabelHooks
+import com.xposed.wetypehook.wetype.hook.WeTypeLayoutHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeResourceHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeUpdateHooks
 import com.xposed.wetypehook.wetype.hook.WeTypeWindowHooks
@@ -333,6 +334,7 @@ class MainHook : XposedModule() {
         HookEnvironment.withHookScope("wetype.clipboard") { WeTypeClipboardHooks.install(sourceDir, classLoader) }
         HookEnvironment.withHookScope("wetype.gesture") { WeTypeGestureHooks.install(sourceDir, classLoader) }
         HookEnvironment.withHookScope("wetype.keylabel") { WeTypeKeyLabelHooks.install(sourceDir, classLoader) }
+        HookEnvironment.withHookScope("wetype.layout-18key") { WeTypeLayoutHooks.install(::getModuleAssetManager) }
     }
 
     private fun installBaseImeHooks(forceTransparentBottomView: Boolean) {

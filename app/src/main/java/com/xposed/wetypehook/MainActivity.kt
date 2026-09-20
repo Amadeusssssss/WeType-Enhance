@@ -513,6 +513,9 @@ private fun WeTypeSettingsScreen(
     var disableHotUpdate by rememberSaveable {
         mutableStateOf(snapshot.disableHotUpdate)
     }
+    var layout18KeyEnabled by rememberSaveable {
+        mutableStateOf(snapshot.layout18KeyEnabled)
+    }
     var showCrossDeviceClipboard by rememberSaveable {
         mutableStateOf(snapshot.showCrossDeviceClipboard)
     }
@@ -748,6 +751,7 @@ private fun WeTypeSettingsScreen(
             appearanceColors = currentAppearanceColors(),
             disableHotUpdate = disableHotUpdate,
             beautificationEnabled = beautificationEnabled,
+            layout18KeyEnabled = layout18KeyEnabled,
             showCrossDeviceClipboard = showCrossDeviceClipboard,
             removeClipboardRetentionLimit = removeClipboardRetentionLimit,
             removeClipboardTextLimit = removeClipboardTextLimit,
@@ -816,6 +820,7 @@ private fun WeTypeSettingsScreen(
         toolbarIconBgOpacity = WeTypeSettings.DEFAULT_TOOLBAR_ICON_BG_OPACITY
         disableHotUpdate = WeTypeSettings.DEFAULT_DISABLE_HOT_UPDATE
         beautificationEnabled = WeTypeSettings.DEFAULT_BEAUTIFICATION_ENABLED
+        layout18KeyEnabled = WeTypeSettings.DEFAULT_LAYOUT_18KEY_ENABLED
         showCrossDeviceClipboard = WeTypeSettings.DEFAULT_SHOW_CROSS_DEVICE_CLIPBOARD
         removeClipboardRetentionLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_RETENTION_LIMIT
         removeClipboardTextLimit = WeTypeSettings.DEFAULT_REMOVE_CLIPBOARD_TEXT_LIMIT
@@ -1061,6 +1066,8 @@ private fun WeTypeSettingsScreen(
 
                 2 -> {
                     FeatureTabContent(
+                        layout18KeyEnabled = layout18KeyEnabled,
+                        onLayout18KeyEnabledChange = { layout18KeyEnabled = it },
                         logoEnabled = logoEnabled,
                         onLogoEnabledChange = { logoEnabled = it },
                         logoShowEnabled = logoShowEnabled,
@@ -3036,6 +3043,8 @@ private fun GestureKeyButton(
 }
 
 private fun LazyListScope.FeatureTabContent(
+    layout18KeyEnabled: Boolean,
+    onLayout18KeyEnabledChange: (Boolean) -> Unit,
     logoEnabled: Boolean,
     onLogoEnabledChange: (Boolean) -> Unit,
     logoShowEnabled: Boolean,
@@ -3076,6 +3085,24 @@ private fun LazyListScope.FeatureTabContent(
     activationStatus: ModuleActivationTracker.ActivationStatus,
     onRestoreDefaults: () -> Unit
 ) {
+    // 0. 键盘布局卡片
+    item {
+        SmallTitle(text = "键盘布局")
+        Card(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            insideMargin = PaddingValues(0.dp)
+        ) {
+            Column {
+                MiuixSwitchWidget(
+                    title = "18键双拼布局",
+                    description = "动态替换官方九键双拼为18键布局，支持滑动符号与紧凑微调",
+                    checked = layout18KeyEnabled,
+                    onCheckedChange = onLayout18KeyEnabledChange
+                )
+            }
+        }
+    }
+
     // 1. 键盘 Logo 卡片
     item {
         val context = LocalContext.current
