@@ -58,11 +58,46 @@ def parse_version_tuple(ver_str):
             parts.append(int(p))
     return tuple(parts)
 
+def get_official_download_url():
+    """
+    优先通过腾讯官方直连落地页 (a.app.qq.com) 动态提取腾讯官方 CDN 全量 APK 直链
+    全量 APK 为独立单体包，彻底避免 Google Play / APKPure 分包分片 (Split APKs / XAPK) 导致的 INSTALL_FAILED_MISSING_SPLIT
+    """
+    try:
+        url = "https://a.app.qq.com/o/simple.jsp?pkgname=com.tencent.wetype"
+        headers = {"User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8)"}
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            html = resp.read().decode("utf-8", errors="replace")
+        idx = html.find("window.systemData")
+        if idx != -1:
+            start = html.find("{", idx)
+            depth = 0
+            end = start
+            for i in range(start, len(html)):
+                if html[i] == "{": depth += 1
+                elif html[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            data = json.loads(html[start:end])
+            apk_url = data.get("appDetail", {}).get("apkUrl")
+            if apk_url and apk_url.startswith("http"):
+                print(f"[+] 成功解析到腾讯官方 CDN 直连全量底包: {apk_url}")
+                return apk_url
+    except Exception as e:
+        print(f"[-] 解析腾讯官方 CDN 直链异常: {e}")
+
+    # 保底源
+    print("[*] 降级采用 APKPure 镜像源获取底包...")
+    return "https://d.apkpure.net/b/APK/com.tencent.wetype?version=latest"
+
 def download_official_apk(target_apk_path):
     """
-    下载最新官方 APK。在 CI 海外环境下通过 APKPure 直链获取，并自动解包 XAPK。
+    下载官方全量单体 APK。
     """
-    download_url = "https://d.apkpure.net/b/APK/com.tencent.wetype?version=latest"
+    download_url = get_official_download_url()
     print(f"[*] 正在拉取官方底包: {download_url} ...")
     os.makedirs(os.path.dirname(os.path.abspath(target_apk_path)), exist_ok=True)
     temp_download = target_apk_path + ".tmp"
