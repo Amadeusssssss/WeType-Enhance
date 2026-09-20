@@ -1,0 +1,222 @@
+name: Build Patched APK
+
+on:
+  workflow_run:
+    workflows: ["Build Module"]
+    types: [completed]
+  schedule:
+    # 每天北京时间 08:00 (UTC 00:00) 自动巡检官方微信输入法官网更新
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      module_tag:
+        description: "使用的 WeType-Enhance 模块 Release Tag (留空默认拉取最新 Release)"
+        type: string
+        default: ""
+      official_apk_url:
+        description: "自定义官方 APK 直链（留空则自动从官方源/镜像获取）"
+        type: string
+        default: ""
+      force_rebuild:
+        description: "即使官网无新版本也强制构建"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    # 若是由 Build Module 联动触发，必须在其构建成功的前提下执行
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Check Official Update
+        id: check_update
+        run: |
+          mkdir -p build_work/base build_work/module dist/releases
+          
+          # 判断触发方式
+          IS_SCHEDULE="${{ github.event_name == 'schedule' }}"
+          IS_WORKFLOW_RUN="${{ github.event_name == 'workflow_run' }}"
+          FORCE="${{ inputs.force_rebuild }}"
+          
+          if [ "$IS_WORKFLOW_RUN" = "true" ] || [ "$FORCE" = "true" ]; then
+            FORCE_FLAG="--force"
+          else
+            FORCE_FLAG=""
+          fi
+          
+          echo "[*] 正在执行官方源版本巡检 (https://z.weixin.qq.com/) ..."
+          python3 scripts/ci/check_official_update.py $FORCE_FLAG --download build_work/base/official.apk
+          
+          if [ -f "build_work/base/official.apk" ]; then
+            echo "HAS_BASE_APK=true" >> $GITHUB_ENV
+          else
+            echo "HAS_BASE_APK=false" >> $GITHUB_ENV
+          fi
+
+      - name: Determine If Build Needed
+        id: gate
+        run: |
+          HAS_UPDATE="${{ steps.check_update.outputs.has_update }}"
+          IS_SCHEDULE="${{ github.event_name == 'schedule' }}"
+          
+          if [ "$IS_SCHEDULE" = "true" ] && [ "$HAS_UPDATE" != "true" ]; then
+            echo "[*] 定时巡检：官方站点暂无新版本发布，跳过构建。"
+            echo "SHOULD_BUILD=false" >> $GITHUB_ENV
+          else
+            echo "[+] 满足构建触发条件，继续执行修补流水线。"
+            echo "SHOULD_BUILD=true" >> $GITHUB_ENV
+          fi
+
+      - name: Acquire Base APK (Fallback / Custom)
+        if: ${{ env.SHOULD_BUILD == 'true' && env.HAS_BASE_APK != 'true' }}
+        run: |
+          CUSTOM_URL="${{ inputs.official_apk_url }}"
+          if [ -n "$CUSTOM_URL" ]; then
+            echo "[*] 正在从自定义链接下载官方底包: $CUSTOM_URL ..."
+            curl -sL "$CUSTOM_URL" -o build_work/base/official.apk
+          else
+            echo "[*] 从通用镜像拉取官方底包 APK ..."
+            curl -sL -A "Mozilla/5.0" "https://d.apkpure.net/b/APK/com.tencent.wetype?version=latest" -o build_work/base/downloaded_pkg
+            # 自动识别是 APK 还是 XAPK(ZIP)
+            if unzip -t build_work/base/downloaded_pkg >/dev/null 2>&1; then
+              echo "[*] 解压 XAPK 提取 base.apk ..."
+              unzip -p build_work/base/downloaded_pkg "*.apk" > build_work/base/official.apk || true
+              if [ ! -s "build_work/base/official.apk" ]; then
+                unzip -j build_work/base/downloaded_pkg "com.tencent.wetype.apk" -d build_work/base/ || true
+                mv build_work/base/com.tencent.wetype.apk build_work/base/official.apk
+              fi
+            else
+              mv build_work/base/downloaded_pkg build_work/base/official.apk
+            fi
+          fi
+
+      - name: Acquire Module APK
+        if: ${{ env.SHOULD_BUILD == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          MODULE_TAG="${{ inputs.module_tag }}"
+          echo "[*] 正在获取 WeType-Enhance 模块 APK ..."
+          
+          if [ -n "$MODULE_TAG" ]; then
+            echo "[*] 从 Release $MODULE_TAG 获取模块..."
+            gh release download "$MODULE_TAG" --pattern "WeType_Enhance-*.apk" --dir build_work/module || true
+          fi
+          
+          # 若未获取到，尝试从最新 Release 下载
+          if [ ! -f build_work/module/*.apk ]; then
+            echo "[*] 正在从最新 Release 下载模块 APK..."
+            gh release download --pattern "WeType_Enhance-*.apk" --dir build_work/module || true
+          fi
+          
+          MODULE_FILE=$(find build_work/module -name "WeType_Enhance-*.apk" | head -n 1)
+          if [ -z "$MODULE_FILE" ] || [ ! -f "$MODULE_FILE" ]; then
+            echo "[-] 错误: 未能在 GitHub Releases 中找到可用的 WeType_Enhance 模块 APK！"
+            echo "[-] 提示: 请先运行 'Build Module' 工作流构建并发布模块。"
+            exit 1
+          fi
+          
+          echo "[+] 成功定位模块文件: $MODULE_FILE"
+          echo "MODULE_FILE=$MODULE_FILE" >> $GITHUB_ENV
+          
+          # 提取模块版本号
+          MODULE_BASENAME=$(basename "$MODULE_FILE")
+          # 格式例：WeType_Enhance-v1.28.4-18key-release.apk
+          MOD_VER=$(echo "$MODULE_BASENAME" | sed -E 's/^WeType_Enhance-(v)?//; s/-release\.apk$//; s/\.apk$//')
+          echo "MOD_VER=$MOD_VER" >> $GITHUB_ENV
+
+      - name: Patch and Sign APK
+        if: ${{ env.SHOULD_BUILD == 'true' }}
+        run: |
+          # 确定底包版本号
+          OFFICIAL_VER="${{ steps.check_update.outputs.official_version }}"
+          if [ -z "$OFFICIAL_VER" ]; then
+            OFFICIAL_VER=$(python3 -c "import json; print(json.load(open('config/official_version.json')).get('base_version', '3.5.4'))")
+          fi
+          echo "OFFICIAL_VER=$OFFICIAL_VER" >> $GITHUB_ENV
+          
+          OUTPUT_NAME="WeChat_Keyboard-v${OFFICIAL_VER}-18key-enhanced-v${MOD_VER}.apk"
+          OUTPUT_PATH="dist/releases/$OUTPUT_NAME"
+          echo "FINAL_OUTPUT_PATH=$OUTPUT_PATH" >> $GITHUB_ENV
+          echo "FINAL_OUTPUT_NAME=$OUTPUT_NAME" >> $GITHUB_ENV
+          
+          echo "[*] 执行无头 LSPatch 注入与自签名..."
+          python3 scripts/ci/patch_apk.py \
+            --base-apk build_work/base/official.apk \
+            --module-apk "$MODULE_FILE" \
+            --output-apk "$OUTPUT_PATH"
+
+      - name: Upload Patched Artifact
+        if: ${{ env.SHOULD_BUILD == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: patched-wechat-keyboard-apk
+          path: dist/releases/*.apk
+          retention-days: 7
+
+      - name: Upload Patched APK to GitHub Release
+        if: ${{ env.SHOULD_BUILD == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_TAG="${{ inputs.module_tag }}"
+          if [ -z "$TARGET_TAG" ]; then
+            TARGET_TAG="v${MOD_VER}"
+          fi
+          
+          echo "[*] 正在将修补包上传至 Release: $TARGET_TAG ..."
+          # 检查对应 Tag 的 Release 是否存在
+          if gh release view "$TARGET_TAG" >/dev/null 2>&1; then
+            echo "[*] Release $TARGET_TAG 存在，直接上传附件..."
+            gh release upload "$TARGET_TAG" "$FINAL_OUTPUT_PATH" --clobber
+          else
+            echo "[*] Release $TARGET_TAG 不存在，自动创建..."
+            gh release create "$TARGET_TAG" "$FINAL_OUTPUT_PATH" \
+              --title "WeChat Keyboard 18-Key Enhanced $TARGET_TAG" \
+              --notes "包含免 Root 独立修补包: \`$FINAL_OUTPUT_NAME\` (官方底包 v$OFFICIAL_VER + 增强模块 v$MOD_VER)"
+          fi
+
+      - name: Update Config on Official Version Bump
+        if: ${{ env.SHOULD_BUILD == 'true' && steps.check_update.outputs.has_update == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VER="${{ steps.check_update.outputs.official_version }}"
+          echo "[*] 更新本地 config/official_version.json 到 $NEW_VER ..."
+          python3 -c "
+          import json
+          with open('config/official_version.json', 'r+') as f:
+              data = json.load(f)
+              data['last_checked_version'] = '$NEW_VER'
+              data['base_version'] = '$NEW_VER'
+              f.seek(0)
+              json.dump(data, f, indent=2, ensure_ascii=False)
+              f.truncate()
+          "
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/official_version.json
+          git commit -m "chore(version): 自动同步官方微信输入法基线版本至 $NEW_VER" || echo "配置无变动"
+          git push

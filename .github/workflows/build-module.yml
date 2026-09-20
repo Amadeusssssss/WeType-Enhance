@@ -1,0 +1,121 @@
+name: Build Module
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "是否发布或更新 GitHub Release"
+        type: boolean
+        default: true
+      release_tag:
+        description: "自定义 Release Tag（留空则默认读取 gradle 中的 v{versionName}）"
+        type: string
+        default: ""
+      trigger_patch:
+        description: "构建成功后是否自动触发修补包构建"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build-module:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Extract Version Info
+        id: version_info
+        run: |
+          VERSION_NAME=$(grep -o 'versionName = "[^"]*"' app/build.gradle.kts | cut -d'"' -f2)
+          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then
+            TAG="v$VERSION_NAME"
+          fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+          echo "Detected versionName: $VERSION_NAME, Release Tag: $TAG"
+
+      - name: Build Module APK with Gradle
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Sign & Prepare Output APK
+        run: |
+          mkdir -p dist/releases scripts/ci/bin
+          UBER_JAR="scripts/ci/bin/uber-apk-signer.jar"
+          if [ ! -f "$UBER_JAR" ]; then
+            curl -sL "https://github.com/patrickfav/uber-apk-signer/releases/download/v1.3.0/uber-apk-signer-1.3.0.jar" -o "$UBER_JAR"
+          fi
+
+          GRADLE_APK=$(find app/build/outputs/apk/release -name "WeType_Enhance-*.apk" | grep -v "aligned-debugSigned" | head -n 1)
+          if [ -z "$GRADLE_APK" ]; then
+            echo "[-] Error: Compiled APK not found in build outputs!"
+            exit 1
+          fi
+
+          echo "[*] Signing APK: $GRADLE_APK ..."
+          java -jar "$UBER_JAR" -a "$GRADLE_APK" --overwrite --allowResign
+
+          TARGET_APK="dist/releases/WeType_Enhance-v${VERSION_NAME}-release.apk"
+          SIGNED_CANDIDATE="${GRADLE_APK%.apk}-aligned-debugSigned.apk"
+          if [ -f "$SIGNED_CANDIDATE" ]; then
+            mv "$SIGNED_CANDIDATE" "$TARGET_APK"
+          else
+            mv "$GRADLE_APK" "$TARGET_APK"
+          fi
+
+          echo "[+] Final Module APK created at: $TARGET_APK"
+          echo "MODULE_APK_PATH=$TARGET_APK" >> $GITHUB_ENV
+
+      - name: Upload Module Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: module-apk
+          path: dist/releases/*.apk
+          retention-days: 7
+
+      - name: Publish GitHub Release
+        if: ${{ inputs.publish_release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: WeType-Enhance ${{ env.RELEASE_TAG }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: ${{ env.MODULE_APK_PATH }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger Patched APK Workflow
+        if: ${{ inputs.trigger_patch }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'build-patch.yml',
+              ref: context.ref,
+              inputs: {
+                module_tag: process.env.RELEASE_TAG,
+                force_rebuild: 'true'
+              }
+            });
