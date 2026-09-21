@@ -98,21 +98,26 @@ jobs:
           path: dist/releases/*.apk
           retention-days: 7
 
+      - name: Extract Release Notes from CHANGELOG
+        run: |
+          mkdir -p dist
+          python3 scripts/ci/extract_changelog.py --tag "${{ env.RELEASE_TAG }}" --output dist/RELEASE_NOTES.md
+
       - name: Publish GitHub Release
         if: ${{ github.event_name == 'push' || inputs.publish_release }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: WeType-Enhance ${{ env.RELEASE_TAG }}
+          body_path: dist/RELEASE_NOTES.md
           draft: false
           prerelease: false
-          generate_release_notes: true
           files: ${{ env.MODULE_APK_PATH }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger Patched APK Workflow
-        if: ${{ inputs.trigger_patch }}
+        if: ${{ github.event_name == 'push' || inputs.trigger_patch }}
         uses: actions/github-script@v7
         with:
           script: |

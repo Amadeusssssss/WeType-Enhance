@@ -66,7 +66,7 @@ jobs:
           fi
           
           echo "[*] 正在执行官方源版本巡检 (https://z.weixin.qq.com/) ..."
-          python3 scripts/ci/check_official_update.py $FORCE_FLAG --download build_work/base/official.apk
+          python3 scripts/ci/check_official_update.py $FORCE_FLAG --download build_work/base/official.apk --changelog-output build_work/official_changelog.md
           
           if [ -f "build_work/base/official.apk" ]; then
             echo "HAS_BASE_APK=true" >> $GITHUB_ENV
@@ -129,6 +129,15 @@ jobs:
         run: |
           MODULE_TAG="${{ inputs.module_tag }}"
           echo "[*] 正在获取 WeType-Enhance 模块 APK ..."
+          
+          # 如果未指定 tag，自动拉取最新的 Release Tag
+          if [ -z "$MODULE_TAG" ]; then
+            LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || true)
+            if [ -n "$LATEST_TAG" ]; then
+              MODULE_TAG="$LATEST_TAG"
+              echo "[+] 动态识别到最新发布 Release Tag: $MODULE_TAG"
+            fi
+          fi
           
           # 如果已经通过 artifact 下载到，则无需再走 release download
           if [ ! -f build_work/module/*.apk ]; then
@@ -200,16 +209,41 @@ jobs:
             TARGET_TAG="v${MOD_VER}"
           fi
           
-          echo "[*] 正在将修补包上传至 Release: $TARGET_TAG ..."
+          echo "[*] 正在准备 Release: $TARGET_TAG 的说明与修补包附件..."
+          mkdir -p build_work dist
+          
+          # 提取当前已有的 Release 说明（若存在）
+          EXISTING_NOTES=$(gh release view "$TARGET_TAG" --json body --jq '.body' 2>/dev/null || true)
+          echo "$EXISTING_NOTES" > build_work/existing_notes.md
+          
+          # 判断说明模式：官方版本更新通知 或 常规构建免 Root 产物说明
+          IS_OFFICIAL_UPDATE="${{ steps.check_update.outputs.has_update == 'true' }}"
+          if [ "$IS_OFFICIAL_UPDATE" = "true" ]; then
+            NOTE_MODE="official-update"
+          else
+            NOTE_MODE="append-patched"
+          fi
+          
+          python3 scripts/ci/format_release_notes.py \
+            --mode "$NOTE_MODE" \
+            --base-notes build_work/existing_notes.md \
+            --official-ver "$OFFICIAL_VER" \
+            --mod-ver "$MOD_VER" \
+            --apk-name "$FINAL_OUTPUT_NAME" \
+            --official-title "${{ steps.check_update.outputs.release_title }}" \
+            --changelog-file build_work/official_changelog.md \
+            --output dist/RELEASE_NOTES_UPDATED.md
+          
           # 检查对应 Tag 的 Release 是否存在
           if gh release view "$TARGET_TAG" >/dev/null 2>&1; then
-            echo "[*] Release $TARGET_TAG 存在，直接上传附件..."
+            echo "[*] Release $TARGET_TAG 存在，更新 Release 说明并上传附件..."
+            gh release edit "$TARGET_TAG" --notes-file dist/RELEASE_NOTES_UPDATED.md
             gh release upload "$TARGET_TAG" "$FINAL_OUTPUT_PATH" --clobber
           else
             echo "[*] Release $TARGET_TAG 不存在，自动创建..."
             gh release create "$TARGET_TAG" "$FINAL_OUTPUT_PATH" \
-              --title "WeChat Keyboard 18-Key Enhanced $TARGET_TAG" \
-              --notes "包含免 Root 独立修补包: \`$FINAL_OUTPUT_NAME\` (官方底包 v$OFFICIAL_VER + 增强模块 v$MOD_VER)"
+              --title "WeType-Enhance $TARGET_TAG" \
+              --notes-file dist/RELEASE_NOTES_UPDATED.md
           fi
 
       - name: Update Config on Official Version Bump

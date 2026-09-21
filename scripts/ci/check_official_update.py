@@ -58,6 +58,27 @@ def parse_version_tuple(ver_str):
             parts.append(int(p))
     return tuple(parts)
 
+def html_to_markdown(html_text):
+    if not html_text:
+        return ""
+    text = re.sub(r"<br\s*/?>", "\n", html_text, flags=re.IGNORECASE)
+    text = re.sub(r"</p>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"</h[1-6]>", "\n", text, flags=re.IGNORECASE)
+    text = re.sub(r"<h[1-6][^>]*>", "\n- ", text, flags=re.IGNORECASE)
+    text = re.sub(r"&nbsp;", " ", text, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", "", text)
+    lines = [line.strip() for line in text.splitlines()]
+    result = []
+    for line in lines:
+        if not line:
+            continue
+        cleaned_line = re.sub(r"^-\s*[-*•]\s*", "- ", line)
+        if not cleaned_line.startswith(("-", "*")):
+            cleaned_line = "- " + cleaned_line
+        result.append(cleaned_line)
+    return "\n".join(result).strip()
+
+
 def get_official_download_url():
     """
     优先通过腾讯官方直连落地页 (a.app.qq.com) 动态提取腾讯官方 CDN 全量 APK 直链
@@ -158,6 +179,7 @@ def main():
     parser.add_argument("--force", action="store_true", help="强制标记为有更新")
     parser.add_argument("--download", help="若有更新，将官方 APK 下载到指定文件路径")
     parser.add_argument("--check-only", action="store_true", help="仅检测版本，不执行下载")
+    parser.add_argument("--changelog-output", help="输出官方更新日志至 Markdown 文件")
     args = parser.parse_args()
 
     config = {}
@@ -174,6 +196,13 @@ def main():
     latest_ver = latest_info.get("version", "").strip()
     title = latest_info.get("title", "")
     release_date = latest_info.get("release_date", 0)
+    cl_md = html_to_markdown(latest_info.get("content_html", ""))
+
+    if args.changelog_output:
+        os.makedirs(os.path.dirname(os.path.abspath(args.changelog_output)), exist_ok=True)
+        with open(args.changelog_output, "w", encoding="utf-8") as f:
+            f.write(cl_md + "\n")
+        print(f"[+] 官方更新日志已导出至: {args.changelog_output}")
 
     print(f"[+] 官方源检测到最新发布版本: {latest_ver}")
     print(f"    发布标题: {title}")

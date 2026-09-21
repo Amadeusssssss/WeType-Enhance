@@ -21,3 +21,7 @@ work/
 artifacts/
 tools/
 scripts/ci/bin/
+__pycache__/
+*.pyc
+dist/
+build_work/
