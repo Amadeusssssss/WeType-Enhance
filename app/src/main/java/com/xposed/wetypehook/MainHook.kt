@@ -78,6 +78,7 @@ private const val TARGET_KIND_PHRASE = "phrase"
 private const val STATE_TARGET_KIND = "target_kind"
 private const val STATE_PACKAGE_NAME = "package_name"
 private const val STATE_SOURCE_DIR = "source_dir"
+private const val STATE_DATA_DIR = "data_dir"
 private const val STATE_TARGETS = "targets"
 
 private val WETYPE_COLOR_REPLACEMENTS = mapOf(
@@ -118,7 +119,8 @@ class MainHook : XposedModule() {
     private data class ActiveTarget(
         val kind: String,
         val packageName: String? = null,
-        val sourceDir: String? = null
+        val sourceDir: String? = null,
+        val dataDir: String? = null
     )
 
     private data class AboutLogoState(
@@ -161,12 +163,14 @@ class MainHook : XposedModule() {
         }
 
         HookEnvironment.updateClassLoader(param.classLoader)
+        ModuleRuntime.updateHostDataDir(param.applicationInfo.dataDir)
         val isMiuiImeSupport = PropertyUtils["ro.miui.support_miui_ime_bottom", "0"] == "1"
         if (packageName == MIUI_PHRASE_PACKAGE) {
             recordActiveTarget(ActiveTarget(
                 kind = TARGET_KIND_PHRASE,
                 packageName = packageName,
-                sourceDir = param.applicationInfo.sourceDir
+                sourceDir = param.applicationInfo.sourceDir,
+                dataDir = param.applicationInfo.dataDir
             ))
             if (isMiuiImeSupport) {
                 HookEnvironment.withHookScope("phrase.validation") {
@@ -175,7 +179,12 @@ class MainHook : XposedModule() {
             }
         } else {
             val sourceDir = param.applicationInfo.sourceDir
-            recordActiveTarget(ActiveTarget(TARGET_KIND_PACKAGE, packageName, sourceDir = sourceDir))
+            recordActiveTarget(ActiveTarget(
+                TARGET_KIND_PACKAGE,
+                packageName,
+                sourceDir = sourceDir,
+                dataDir = param.applicationInfo.dataDir
+            ))
             startHook(packageName, param.classLoader, sourceDir, isMiuiImeSupport)
         }
     }
@@ -219,6 +228,7 @@ class MainHook : XposedModule() {
         val bottomManagersToReconcile = LinkedHashSet<Class<*>>()
         val packageNamesToReconcile = LinkedHashSet<String>()
         targets.forEach { target ->
+            target.dataDir?.let { ModuleRuntime.updateHostDataDir(it) }
             val classLoader = resolveHotReloadClassLoader(target, param.oldHookHandles)
             HookEnvironment.updateClassLoader(classLoader)
             when (target.kind) {
@@ -1074,6 +1084,7 @@ class MainHook : XposedModule() {
         putString(STATE_TARGET_KIND, kind)
         packageName?.let { putString(STATE_PACKAGE_NAME, it) }
         sourceDir?.let { putString(STATE_SOURCE_DIR, it) }
+        dataDir?.let { putString(STATE_DATA_DIR, it) }
     }
 
     private fun activeTargetsBundle(): Bundle = Bundle().apply {
@@ -1106,7 +1117,8 @@ class MainHook : XposedModule() {
         return ActiveTarget(
             kind = kind,
             packageName = getString(STATE_PACKAGE_NAME),
-            sourceDir = getString(STATE_SOURCE_DIR)
+            sourceDir = getString(STATE_SOURCE_DIR),
+            dataDir = getString(STATE_DATA_DIR)
         )
     }
 

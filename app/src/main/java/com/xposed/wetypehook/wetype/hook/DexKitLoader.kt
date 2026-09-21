@@ -74,8 +74,12 @@ object DexKitLoader {
                 return false
             }
 
-            val primaryAbi = Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
-            val abisToTry = listOf(primaryAbi) + Build.SUPPORTED_ABIS.filter { it != primaryAbi }
+            val is64 = android.os.Process.is64Bit()
+            val abisToTry = if (is64) {
+                Build.SUPPORTED_64_BIT_ABIS.toList().ifEmpty { listOf("arm64-v8a") }
+            } else {
+                Build.SUPPORTED_32_BIT_ABIS.toList().ifEmpty { listOf("armeabi-v7a") }
+            }
 
             ZipFile(apkFile).use { zip ->
                 var targetEntry: java.util.zip.ZipEntry? = null
@@ -92,39 +96,97 @@ object DexKitLoader {
                     return false
                 }
 
-                // 获取宿主进程的 codeCacheDir 或 cacheDir (具备可执行与读取权限)
+                // 宿主进程内定位可执行写入目录 (优先 code_cache/cache)
                 val app = runCatching {
                     Class.forName("android.app.ActivityThread")
                         .getMethod("currentApplication")
                         .invoke(null) as? android.app.Application
                 }.getOrNull()
+
                 val hostDataDir = ModuleRuntime.getHostDataDir()
-                val targetDir = app?.codeCacheDir
-                    ?: app?.cacheDir
-                    ?: hostDataDir?.let { File(it, "code_cache") }
-                    ?: hostDataDir?.let { File(it, "cache") }
-                    ?: File(System.getProperty("java.io.tmpdir") ?: "/data/local/tmp")
-
-                if (!targetDir.exists()) {
-                    targetDir.mkdirs()
-                }
-
-                val destFile = File(targetDir, "libdexkit_${targetEntry.crc}.so")
-                if (!destFile.exists() || destFile.length() != targetEntry.size) {
-                    zip.getInputStream(targetEntry).use { input ->
-                        FileOutputStream(destFile).use { output ->
-                            input.copyTo(output)
+                    ?: app?.applicationInfo?.dataDir
+                    ?: runCatching {
+                        val activityThread = Class.forName("android.app.ActivityThread")
+                            .getMethod("currentActivityThread")
+                            .invoke(null)
+                        val boundApp = activityThread?.let {
+                            it.javaClass.getDeclaredField("mBoundApplication").apply { isAccessible = true }.get(it)
                         }
-                    }
-                    destFile.setReadable(true, false)
-                    destFile.setExecutable(true, false)
+                        val appInfo = boundApp?.let {
+                            it.javaClass.getDeclaredField("appInfo").apply { isAccessible = true }.get(it) as? android.content.pm.ApplicationInfo
+                        }
+                        appInfo?.dataDir
+                    }.getOrNull()
+
+                val candidateDirs = mutableListOf<File>()
+                app?.codeCacheDir?.let { candidateDirs.add(it) }
+                app?.cacheDir?.let { candidateDirs.add(it) }
+
+                if (!hostDataDir.isNullOrBlank()) {
+                    candidateDirs.add(File(hostDataDir, "code_cache"))
+                    candidateDirs.add(File(hostDataDir, "cache"))
+                    candidateDirs.add(File(hostDataDir, "files"))
                 }
 
-                System.load(destFile.absolutePath)
-                true
+                val packageNames = listOfNotNull(
+                    app?.packageName,
+                    "com.tencent.wetype"
+                ).distinct()
+
+                for (pkg in packageNames) {
+                    candidateDirs.add(File("/data/user/0/$pkg/code_cache"))
+                    candidateDirs.add(File("/data/user/0/$pkg/cache"))
+                    candidateDirs.add(File("/data/data/$pkg/code_cache"))
+                    candidateDirs.add(File("/data/data/$pkg/cache"))
+                    candidateDirs.add(File("/data/user_de/0/$pkg/code_cache"))
+                    candidateDirs.add(File("/data/user_de/0/$pkg/cache"))
+                }
+
+                val triedDirs = mutableListOf<String>()
+                for (dir in candidateDirs.distinctBy { it.absolutePath }) {
+                    val canUse = runCatching {
+                        if (!dir.exists()) dir.mkdirs()
+                        dir.exists() && dir.canWrite()
+                    }.getOrDefault(false)
+
+                    if (!canUse) continue
+                    triedDirs.add(dir.absolutePath)
+
+                    val loadSuccess = runCatching {
+                        val destFile = File(dir, "libdexkit_${targetEntry.crc}.so")
+                        if (!destFile.exists() || destFile.length() != targetEntry.size) {
+                            val tempFile = File(dir, "libdexkit_${targetEntry.crc}.tmp")
+                            zip.getInputStream(targetEntry).use { input ->
+                                FileOutputStream(tempFile).use { output ->
+                                    input.copyTo(output)
+                                }
+                            }
+                            if (!tempFile.renameTo(destFile)) {
+                                tempFile.copyTo(destFile, overwrite = true)
+                                tempFile.delete()
+                            }
+                            destFile.setReadable(true, false)
+                            destFile.setExecutable(true, false)
+                        }
+
+                        System.load(destFile.absolutePath)
+                        Log.i("[$TAG] Successfully loaded libdexkit from: ${destFile.absolutePath}")
+                        true
+                    }.onFailure { err ->
+                        Log.w("[$TAG] Failed to load libdexkit from ${dir.absolutePath}: ${err.message}")
+                    }.getOrDefault(false)
+
+                    if (loadSuccess) {
+                        return true
+                    }
+                }
+
+                Log.e("[$TAG] Tried all writable candidate directories without success: $triedDirs")
+                false
             }
         }.onFailure { error ->
             Log.e("[$TAG] Exception during libdexkit extraction and load: ${error.message}")
+            Log.i(error)
         }.getOrDefault(false)
     }
 }

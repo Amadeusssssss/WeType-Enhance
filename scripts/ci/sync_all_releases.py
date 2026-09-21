@@ -86,3 +86,4 @@ def sync_releases():
 
 if __name__ == "__main__":
     sync_releases()
+

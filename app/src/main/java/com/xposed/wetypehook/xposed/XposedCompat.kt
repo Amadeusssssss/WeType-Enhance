@@ -202,12 +202,20 @@ object Log {
         log("I", message)
     }
 
+    fun w(message: Any?) {
+        log("W", message)
+    }
+
     fun e(message: Any?) {
         log("E", message)
     }
 
     private fun log(level: String, message: Any?) {
-        val priority = if (level == "E") AndroidLog.ERROR else AndroidLog.INFO
+        val priority = when (level) {
+            "E" -> AndroidLog.ERROR
+            "W" -> AndroidLog.WARN
+            else -> AndroidLog.INFO
+        }
         val module = HookEnvironment.moduleOrNull()
         if (message is Throwable) {
             val text = "[${HookEnvironment.logTag()}][$level] ${message.message ?: message.javaClass.name}"

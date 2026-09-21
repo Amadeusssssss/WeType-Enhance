@@ -31,3 +31,4 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           python3 scripts/ci/sync_all_releases.py
+

@@ -29,11 +29,11 @@ class GestureActionIdContractTest {
     @Test fun idsAreContiguousWithNoGaps() {
         val ids = GestureAction.entries.map { it.id }
         assertEquals(ids.sorted(), ids)
-        assertEquals((0..24).toList(), ids)
+        assertEquals((0..25).toList(), ids)
     }
 
-    @Test fun actionCountIsTwentyFive() {
-        assertEquals(25, GestureAction.entries.size)
+    @Test fun actionCountIsTwentySix() {
+        assertEquals(26, GestureAction.entries.size)
     }
 
     @Test fun settingsActionsUseDistinctIdsAndTitles() {
@@ -50,11 +50,12 @@ class GestureActionIdContractTest {
         assertEquals(23, GestureAction.MoveSelect.id)
     }
 
-    /** 24 is the first id no older build ever wrote; that is why the new action lives there. */
+    /** 24 and 25 are the ids no older build ever wrote (24: 模块设置, 25: 中英切换). */
     @Test fun newActionSitsOutsideTheLegacyIdRange() {
         assertEquals(24, GestureAction.OpenModuleSettings.id)
+        assertEquals(25, GestureAction.SwitchLanguage.id)
         GestureAction.entries
-            .filter { it != GestureAction.OpenModuleSettings }
+            .filter { it != GestureAction.OpenModuleSettings && it != GestureAction.SwitchLanguage }
             .forEach { assertTrue("$it encroaches on the new slot", it.id <= 23) }
     }
 

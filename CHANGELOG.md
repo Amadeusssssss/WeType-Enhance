@@ -4,6 +4,20 @@
 
 ---
 
+## [v1.28.4-18key.2] - 2026-09-21
+
+### 🐛 重点问题修复 (Bug Fixes)
+- **修复 LSPosed 模式（原版输入法 + 模块）下按键下滑手势完全失效**
+  - **现象**：在 LSPatch 免 Root 修补版中按键下滑一切正常，但在 LSPosed 模块模式下搭配原版输入法时，下滑手势完全无法触发。
+  - **根因分析**：按键手势系统依赖 DexKit 动态扫描输入法底层的混淆触摸分发逻辑（`onTouch move2` 与 `(selfdraw.j, MotionEvent, selfdraw.p)Z`）。在原版输入法 + 独立模块环境下，由于 Android 7.0+ Linker ClassLoader Namespace 隔离，宿主无法跨应用加载模块 APK 内的 `.so`；同时在 LibXposed 模块早期初始化阶段，宿主尚未创建 `Application` 实例，导致原生库提取路径回退至 `/data/local/tmp` 触发 SELinux / EACCES 权限拒绝，DexKit 初始化失败并导致手势 Hook 被静默跳过。
+  - **修复实现**：
+    1. 在 `MainHook.onPackageReady` 中捕获并注册宿主真实数据目录（`param.applicationInfo.dataDir`），并通过 `ActiveTarget` 在热重载状态中完整持久化保存。
+    2. 重构 `DexKitLoader`：引入严格的 32/64 位进程 ABI 架构匹配校验（避免 ELFCLASS 冲突）。
+    3. 建立宿主专属可执行写入目录（`code_cache`、`cache`、`files`）多级动态解析与逐级加载容灾机制，彻底解决 LSPosed 环境下原版微信输入法的 DexKit 加载与手势拦截问题。
+    4. 同步更新单元测试契约，覆盖全量 26 项手势动作定义。
+
+---
+
 ## [v1.28.4-18key.1] - 2026-09-21
 
 ### ✨ 新增功能 (Features)
