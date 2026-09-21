@@ -1,0 +1,33 @@
+name: Sync Release Notes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'CHANGELOG.md'
+      - '.github/workflows/sync-releases.yml'
+      - 'scripts/ci/sync_all_releases.py'
+      - 'scripts/ci/format_release_notes.py'
+
+permissions:
+  contents: write
+
+jobs:
+  sync-all-notes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Release Notes Sync
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python3 scripts/ci/sync_all_releases.py
